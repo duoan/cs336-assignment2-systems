@@ -1,0 +1,327 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  language=Python,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{red},
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{CS336 Assignment 2}
+\lhead{Systems and Parallelism}
+\cfoot{\thepage}
+
+\title{\textbf{CS336 Assignment 2: Systems and Parallelism} \\ Writeup}
+\author{Your Name \\ SUNet ID}
+\date{Spring 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%% ============================================================
+\section{Profiling and Benchmarking}
+%% ============================================================
+
+% ----------------------------------------------------------
+\subsection{End-to-End Benchmarking}
+\textbf{Problem (benchmarking\_script)}
+
+\paragraph{(b) Timings for forward, backward, and optimizer step.}
+
+% TODO: Insert your timing table here
+% \begin{table}[H]
+% \centering
+% \caption{End-to-end benchmarking results (5 warmup, 10 measurement steps).}
+% \begin{tabular}{lrrr}
+% \toprule
+% Model Size & Forward (ms) & Backward (ms) & Optimizer Step (ms) \\
+% \midrule
+% small  & & & \\
+% medium & & & \\
+% large  & & & \\
+% xl     & & & \\
+% \bottomrule
+% \end{tabular}
+% \end{table}
+
+\paragraph{(c) Effect of removing warm-up steps.}
+
+
+% ----------------------------------------------------------
+\subsection{Nsight Systems Profiling}
+\textbf{Problem (nsys\_profile)}
+
+\paragraph{(a) Total time on forward pass.}
+
+
+\paragraph{(b) Most time-consuming CUDA kernel.}
+
+
+\paragraph{(c) Non-matmul kernels with non-trivial runtime.}
+
+
+\paragraph{(d) Full training step profile comparison.}
+
+
+\paragraph{(e) Softmax vs.\ matrix multiplication runtime comparison.}
+
+
+% ----------------------------------------------------------
+\subsection{Mixed Precision}
+
+\subsubsection{Mixed-Precision Accumulation}
+\textbf{Problem (mixed\_precision\_accumulation)}
+
+
+\subsubsection{Benchmarking Mixed Precision}
+\textbf{Problem (benchmarking\_mixed\_precision)}
+
+\paragraph{(a) Data types under FP16 autocasting.}
+
+% TODO: List data types for each component
+
+\paragraph{(b) Layer normalization and BF16.}
+
+
+\paragraph{(c) Mixed precision benchmarking results.}
+
+% TODO: Insert timing table with/without mixed precision
+
+% ----------------------------------------------------------
+\subsection{Memory Profiling}
+\textbf{Problem (memory\_profiling)}
+
+\paragraph{(a) Memory timelines.}
+
+% TODO: Insert two images from memory_viz tool
+
+\paragraph{(b) Peak memory usage.}
+
+% TODO: Insert table with peak memory per context length
+
+\paragraph{(c) Mixed precision effect on memory.}
+
+
+\paragraph{(d) Size of activation tensor in residual stream.}
+
+
+\paragraph{(e) Largest allocations in memory timeline.}
+
+
+\paragraph{(f) Memory saved for backward per TransformerBlock.}
+
+% TODO: Insert Nsight screenshots
+
+
+%% ============================================================
+\section{Single-GPU Memory}
+%% ============================================================
+
+\textbf{Problem (gradient\_checkpointing)}
+
+\paragraph{(a) Optimal checkpointing strategy.}
+
+% TODO: Describe strategy, asymptotic memory, code sketch
+
+\paragraph{(b) Best single-level checkpointing for xl model.}
+
+% TODO: Describe reasoning and measured peak memory
+
+
+%% ============================================================
+\section{GPU Kernels}
+%% ============================================================
+
+% ----------------------------------------------------------
+\subsection{PyTorch Attention Benchmarking}
+\textbf{Problem (pytorch\_attention)}
+
+\paragraph{(a) Attention benchmarking at different scales.}
+
+% TODO: Insert timing table and memory analysis
+
+% ----------------------------------------------------------
+\subsection{Torch Compile}
+\textbf{Problem (torch\_compile)}
+
+\paragraph{(a) Compiled vs.\ uncompiled attention.}
+
+% TODO: Insert comparison table
+
+\paragraph{(b) Compiled full Transformer model.}
+
+% TODO: Insert comparison table
+
+% ----------------------------------------------------------
+\subsection{FlashAttention-2 Benchmarking}
+\textbf{Problem (flash\_benchmarking)}
+
+\paragraph{(a) Triton FlashAttention-2 vs.\ PyTorch attention.}
+
+% TODO: Insert comparison table
+
+
+%% ============================================================
+\section{Distributed Data Parallel Training}
+%% ============================================================
+
+% ----------------------------------------------------------
+\subsection{Distributed Communication}
+\textbf{Problem (distributed\_communication\_single\_node)}
+
+% TODO: Insert plots/tables and commentary
+
+% ----------------------------------------------------------
+\subsection{Na\"ive DDP Benchmarking}
+\textbf{Problem (naive\_ddp\_benchmarking)}
+
+% TODO: Description and measured timings
+
+% ----------------------------------------------------------
+\subsection{Minimal DDP with Flat Gradients}
+\textbf{Problem (minimal\_ddp\_flat\_benchmarking)}
+
+% TODO: Measured timings and comparison
+
+% ----------------------------------------------------------
+\subsection{DDP with Overlapping Individual Parameters}
+\textbf{Problem (ddp\_overlap\_individual\_parameters\_benchmarking)}
+
+\paragraph{(a) Benchmarking overlapped DDP.}
+
+% TODO: Measured timings and comparison
+
+\paragraph{(b) Nsight profiler comparison.}
+
+% TODO: Insert 2 Nsight screenshots
+
+
+%% ============================================================
+\section{Optimizer State Sharding}
+%% ============================================================
+
+\textbf{Problem (optimizer\_state\_sharding\_accounting)}
+
+\paragraph{(a) Peak memory usage with and without sharding.}
+
+% TODO: Memory results and breakdown
+
+\paragraph{(b) Training speed with and without sharding.}
+
+% TODO: Timing results
+
+\paragraph{(c) Comparison with ZeRO Stage 1.}
+
+
+
+%% ============================================================
+\section{Fully-Sharded Data Parallel}
+%% ============================================================
+
+\textbf{Problem (fsdp\_accounting)}
+
+\paragraph{(a) Expected memory savings from FSDP.}
+
+
+\paragraph{(b) All-gather timing analysis.}
+
+% TODO: Insert Nsight screenshots and timings
+
+
+%% ============================================================
+\section{Analyzing Parallelism Strategies}
+%% ============================================================
+
+% ----------------------------------------------------------
+\subsection{Communication Primitives}
+\textbf{Problem (alternate\_ring\_all\_reduce)}
+
+% TODO: Answer in terms of S, N, W with justification
+
+% ----------------------------------------------------------
+\subsection{Data Parallel Calculations}
+\textbf{Problem (data\_parallel\_calcs)}
+
+\paragraph{(a) FLOPs for backward pass with $N_{\text{DP}}$ data parallelism.}
+
+
+\paragraph{(b) Communication time for backward pass.}
+
+
+\paragraph{(c) Maximum $N_{\text{DP}}$ before communication bottleneck.}
+
+
+% ----------------------------------------------------------
+\subsection{FSDP Calculations}
+\textbf{Problem (fsdp\_calcs)}
+
+\paragraph{(a) FLOPs for forward and backward pass with FSDP.}
+
+
+\paragraph{(b) Communication time for forward and backward pass.}
+
+
+\paragraph{(c) Maximum $N_{\text{FSDP}}$ before communication bottleneck.}
+
+
+% ----------------------------------------------------------
+\subsection{Tensor Parallel Calculations}
+\textbf{Problem (tp\_calcs)}
+
+\paragraph{(a) Backward pass equations for TP.}
+
+% TODO: Series of equations
+
+\paragraph{(b) FLOPs for forward and backward pass with TP.}
+
+
+\paragraph{(c) Communication time for forward and backward pass.}
+
+
+\paragraph{(d) Maximum $N_{\text{TP}}$ before communication bottleneck.}
+
+
+% ----------------------------------------------------------
+\subsection{2D Parallelism (FSDP + TP)}
+\textbf{Problem (fsdp\_tp\_calcs)}
+
+\paragraph{(a) FLOPs for forward pass with 2D parallelism.}
+
+
+\paragraph{(b) Communication time for forward pass.}
+
+
+\paragraph{(c) Maximum $N$ with overlapped communication.}
+
+
+\paragraph{(d) Maximum $N$ without overlapped communication.}
+
+
+
+%% ============================================================
+\section{Leaderboard}
+%% ============================================================
+
+\textbf{Problem (leaderboard)}
+
+% TODO: Report best wall-clock time
+
+\end{document}
