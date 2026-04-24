@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/duo.an/workspaces/cs336-assignment2-systems/cs336_systems/benchmarking.py", line 148, in <module>
+    run_benchmark(
+  File "/home/duo.an/workspaces/cs336-assignment2-systems/cs336_systems/benchmarking.py", line 67, in run_benchmark
+    losses.backward()
+  File "/home/duo.an/workspaces/cs336-assignment2-systems/.venv/lib/python3.12/site-packages/torch/_tensor.py", line 631, in backward
+    torch.autograd.backward(
+  File "/home/duo.an/workspaces/cs336-assignment2-systems/.venv/lib/python3.12/site-packages/torch/autograd/__init__.py", line 381, in backward
+    _engine_run_backward(
+  File "/home/duo.an/workspaces/cs336-assignment2-systems/.venv/lib/python3.12/site-packages/torch/autograd/graph.py", line 869, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 216.00 MiB. GPU 0 has a total capacity of 94.97 GiB of which 31.75 MiB is free. Including non-PyTorch memory, this process has 94.93 GiB memory in use. Of the allocated memory 91.73 GiB is allocated by PyTorch, and 2.56 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+Benchmarking model size: 10B | config: {'d_model': 4608, 'd_ff': 12288, 'num_layers': 50, 'num_heads': 36}
+Model parameters: 12,832,823,808 (12832.8M / 12.83B)

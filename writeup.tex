@@ -46,42 +46,399 @@
 
 \paragraph{(b) Timings for forward, backward, and optimizer step.}
 
-% TODO: Insert your timing table here
-% \begin{table}[H]
-% \centering
-% \caption{End-to-end benchmarking results (5 warmup, 10 measurement steps).}
-% \begin{tabular}{lrrr}
-% \toprule
-% Model Size & Forward (ms) & Backward (ms) & Optimizer Step (ms) \\
-% \midrule
-% small  & & & \\
-% medium & & & \\
-% large  & & & \\
-% xl     & & & \\
-% \bottomrule
-% \end{tabular}
-% \end{table}
+Table~\ref{tab:benchmark-summary} summarizes the mean timings across four model sizes
+(5 warm-up steps, 10 measurement iterations each, batch size 4, context length 512).
+The 10B model (12.8B params) OOM'd on a single 96\,GB GPU even at batch size 1.
+
+As model size grows from small (129M) to xl (3.4B),
+forward time scales from 8.0ms to 158ms ($\sim$20$\times$),
+backward from 24ms to 605ms ($\sim$25$\times$),
+and optimizer from 28ms to 364ms ($\sim$13$\times$).
+The backward-to-forward ratio ranges from $\sim$3$\times$ (small) to $\sim$3.8$\times$ (xl),
+higher than the theoretical 2$\times$ due to the memory-bound nature of
+non-matmul backward kernels at these model scales.
+
+\begin{table}[H]
+\centering
+\caption{Mean benchmark timings across model sizes (5 warmup, 10 measurement steps, seconds).}
+\label{tab:benchmark-summary}
+\begin{tabular}{lrrrrr}
+  \toprule
+  Size & Params & Forward & Backward & Optimizer & Total \\
+  \midrule
+  small  & 128.6M & 0.0080 & 0.0240 & 0.0278 & 0.0645 \\
+  medium & 423.2M & 0.0163 & 0.1005 & 0.0491 & 0.1727 \\
+  large  & 969.4M & 0.0606 & 0.2242 & 0.0883 & 0.3824 \\
+  xl     & 3406.8M & 0.1577 & 0.6049 & 0.3645 & 1.1884 \\
+  10B    & 12832.8M & \multicolumn{4}{c}{OOM (single GPU, 96\,GB)} \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+Detailed per-iteration timings for each model size are reported in
+Tables~\ref{tab:bench-small}--\ref{tab:bench-xl}.
+
+% ---- Small ----
+\begin{table}[H]
+\centering
+\caption{Per-iteration timings --- small (128.6M params, seconds).}
+\label{tab:bench-small}
+\begin{tabular}{lrrrr}
+  \toprule
+  Iter & Forward & Backward & Optimizer & Total \\
+  \midrule
+  0 & 0.008805 & 0.027929 & 0.027512 & 0.068860 \\
+  1 & 0.007973 & 0.023553 & 0.027840 & 0.063957 \\
+  2 & 0.007969 & 0.023524 & 0.027921 & 0.064068 \\
+  3 & 0.007997 & 0.023520 & 0.027875 & 0.064041 \\
+  4 & 0.007806 & 0.023695 & 0.027844 & 0.063934 \\
+  5 & 0.007815 & 0.023712 & 0.027913 & 0.064079 \\
+  6 & 0.007880 & 0.023598 & 0.027878 & 0.063962 \\
+  7 & 0.007954 & 0.023538 & 0.027915 & 0.064049 \\
+  8 & 0.007936 & 0.023600 & 0.027847 & 0.064024 \\
+  9 & 0.008003 & 0.023536 & 0.027891 & 0.064026 \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+% ---- Medium ----
+\begin{table}[H]
+\centering
+\caption{Per-iteration timings --- medium (423.2M params, seconds).}
+\label{tab:bench-medium}
+\begin{tabular}{lrrrr}
+  \toprule
+  Iter & Forward & Backward & Optimizer & Total \\
+  \midrule
+  0 & 0.022665 & 0.103150 & 0.049132 & 0.181706 \\
+  1 & 0.015675 & 0.100775 & 0.049791 & 0.172990 \\
+  2 & 0.015603 & 0.101244 & 0.049703 & 0.173358 \\
+  3 & 0.015699 & 0.100482 & 0.050023 & 0.173115 \\
+  4 & 0.015801 & 0.100800 & 0.049977 & 0.173389 \\
+  5 & 0.015657 & 0.100513 & 0.048556 & 0.171523 \\
+  6 & 0.015449 & 0.098595 & 0.048483 & 0.169038 \\
+  7 & 0.015732 & 0.100194 & 0.048560 & 0.171374 \\
+  8 & 0.015141 & 0.098973 & 0.048456 & 0.168943 \\
+  9 & 0.015582 & 0.100286 & 0.048559 & 0.171229 \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+% ---- Large ----
+\begin{table}[H]
+\centering
+\caption{Per-iteration timings --- large (969.4M params, seconds).}
+\label{tab:bench-large}
+\begin{tabular}{lrrrr}
+  \toprule
+  Iter & Forward & Backward & Optimizer & Total \\
+  \midrule
+  0 & 0.069621 & 0.225146 & 0.087279 & 0.391637 \\
+  1 & 0.059705 & 0.224016 & 0.088500 & 0.381821 \\
+  2 & 0.059492 & 0.224260 & 0.088216 & 0.381226 \\
+  3 & 0.059803 & 0.223808 & 0.088319 & 0.381162 \\
+  4 & 0.059690 & 0.224178 & 0.088502 & 0.381656 \\
+  5 & 0.059637 & 0.223993 & 0.088518 & 0.381416 \\
+  6 & 0.059546 & 0.223956 & 0.088468 & 0.381155 \\
+  7 & 0.059490 & 0.224351 & 0.088252 & 0.381292 \\
+  8 & 0.059381 & 0.224349 & 0.088170 & 0.381223 \\
+  9 & 0.059410 & 0.224161 & 0.088399 & 0.381158 \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+% ---- XL ----
+\begin{table}[H]
+\centering
+\caption{Per-iteration timings --- xl (3.41B params, seconds).}
+\label{tab:bench-xl}
+\begin{tabular}{lrrrr}
+  \toprule
+  Iter & Forward & Backward & Optimizer & Total \\
+  \midrule
+  0 & 0.213040 & 0.609433 & 0.361567 & 1.244934 \\
+  1 & 0.151633 & 0.603544 & 0.364648 & 1.181239 \\
+  2 & 0.151771 & 0.604308 & 0.365424 & 1.182898 \\
+  3 & 0.151549 & 0.604199 & 0.365209 & 1.182638 \\
+  4 & 0.151668 & 0.604337 & 0.364411 & 1.181654 \\
+  5 & 0.151368 & 0.605109 & 0.365054 & 1.182857 \\
+  6 & 0.151595 & 0.603789 & 0.364284 & 1.181087 \\
+  7 & 0.151271 & 0.605567 & 0.364650 & 1.182793 \\
+  8 & 0.151552 & 0.604438 & 0.364929 & 1.182570 \\
+  9 & 0.151519 & 0.604381 & 0.364340 & 1.181539 \\
+  \bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{(c) Effect of removing warm-up steps.}
 
+We re-run the large model (969M params) with warmup $\in \{0, 1, 5\}$
+to isolate the effect of warm-up on measured timings (Table~\ref{tab:warmup-effect}).
+
+Without warm-up (warmup=0), the first iteration is dramatically slower:
+the forward pass takes 295ms compared to $\sim$62ms in steady state (a $\sim$4.8$\times$ slowdown),
+and the backward pass reaches 286ms vs.\ $\sim$224ms.
+The total for iteration 0 is 629ms---1.6$\times$ the steady-state $\sim$384ms.
+This is because CUDA performs lazy initialization on the first kernel launch, including
+context creation, kernel JIT compilation, and memory pool allocation.
+
+With warmup=1, the first measured iteration still shows overhead
+(73ms forward vs.\ $\sim$60ms steady state),
+because a single warm-up step only partially amortizes cuDNN autotuning and
+memory allocator warm-up.
+By warmup=5 (our default), the overhead on iteration 0 shrinks to
+69ms forward---only $\sim$16\% above steady state---and
+iterations 1--9 are fully stable at $\sim$381ms total.
+
+The steady-state timings (iterations 4--9) are consistent across all warm-up settings
+at $\sim$381--385ms total, confirming that warm-up only affects early measurements and
+5 warm-up steps are sufficient for reliable benchmarking.
+
+\begin{table}[H]
+\centering
+\caption{Warm-up effect on the large model (969M params, seconds).}
+\label{tab:warmup-effect}
+
+\begin{subtable}{\textwidth}
+\centering
+\caption{warmup = 0}
+\begin{tabular}{lrrrr}
+  \toprule
+  Iter & Forward & Backward & Optimizer & Total \\
+  \midrule
+  0 & 0.294910 & 0.285918 & 0.039139 & 0.629414 \\
+  1 & 0.063381 & 0.236767 & 0.091641 & 0.401459 \\
+  2 & 0.063882 & 0.228353 & 0.090433 & 0.392371 \\
+  3 & 0.063467 & 0.226980 & 0.090378 & 0.390437 \\
+  4 & 0.062608 & 0.224941 & 0.088858 & 0.386012 \\
+  5 & 0.062538 & 0.224086 & 0.088961 & 0.385279 \\
+  6 & 0.061851 & 0.223798 & 0.088168 & 0.383509 \\
+  7 & 0.061446 & 0.224394 & 0.088809 & 0.384442 \\
+  8 & 0.061604 & 0.223993 & 0.088839 & 0.384135 \\
+  9 & 0.062133 & 0.224124 & 0.089207 & 0.385142 \\
+  \bottomrule
+\end{tabular}
+\end{subtable}
+
+\vspace{0.5em}
+
+\begin{subtable}{\textwidth}
+\centering
+\caption{warmup = 1}
+\begin{tabular}{lrrrr}
+  \toprule
+  Iter & Forward & Backward & Optimizer & Total \\
+  \midrule
+  0 & 0.072542 & 0.225798 & 0.087844 & 0.395896 \\
+  1 & 0.061591 & 0.223565 & 0.088606 & 0.383297 \\
+  2 & 0.061285 & 0.223906 & 0.088446 & 0.383004 \\
+  3 & 0.062142 & 0.223773 & 0.088503 & 0.383811 \\
+  4 & 0.059694 & 0.224057 & 0.088454 & 0.381622 \\
+  5 & 0.059697 & 0.224042 & 0.088680 & 0.382038 \\
+  6 & 0.059696 & 0.223751 & 0.088694 & 0.381424 \\
+  7 & 0.059165 & 0.224367 & 0.088501 & 0.381191 \\
+  8 & 0.059721 & 0.223903 & 0.088787 & 0.381676 \\
+  9 & 0.059531 & 0.224207 & 0.088459 & 0.381434 \\
+  \bottomrule
+\end{tabular}
+\end{subtable}
+
+\vspace{0.5em}
+
+\begin{subtable}{\textwidth}
+\centering
+\caption{warmup = 5 (default)}
+\begin{tabular}{lrrrr}
+  \toprule
+  Iter & Forward & Backward & Optimizer & Total \\
+  \midrule
+  0 & 0.069072 & 0.225348 & 0.087045 & 0.390757 \\
+  1 & 0.059510 & 0.224080 & 0.088312 & 0.381124 \\
+  2 & 0.059796 & 0.223846 & 0.088253 & 0.381137 \\
+  3 & 0.060320 & 0.223399 & 0.088299 & 0.381211 \\
+  4 & 0.059558 & 0.224158 & 0.088539 & 0.381545 \\
+  5 & 0.059449 & 0.224155 & 0.088413 & 0.381281 \\
+  6 & 0.059837 & 0.224020 & 0.088368 & 0.381433 \\
+  7 & 0.059941 & 0.223970 & 0.088252 & 0.381344 \\
+  8 & 0.059600 & 0.224101 & 0.088168 & 0.381192 \\
+  9 & 0.059407 & 0.224022 & 0.088702 & 0.381272 \\
+  \bottomrule
+\end{tabular}
+\end{subtable}
+
+\end{table}
 
 % ----------------------------------------------------------
 \subsection{Nsight Systems Profiling}
 \textbf{Problem (nsys\_profile)}
 
+We profiled two model sizes---\textbf{small} (128.6M params) and
+\textbf{large} (969.4M params)---at three power-of-two context lengths each,
+using \texttt{nsys profile} with 5 warmup + 5 measurement iterations.
+The small model was profiled at context lengths 256, 1024, and 2048 (the
+maximum that fits in GPU memory); the large model at 256, 512, and 1024.
+
 \paragraph{(a) Total time on forward pass.}
 
+Table~\ref{tab:nsys-forward} shows the GPU-projected forward pass time
+per iteration from the \texttt{nvtx\_gpu\_proj\_sum} report.
+The GPU-projected time measures the actual GPU execution span of kernels
+launched within the \texttt{forward\_pass} NVTX range, and is generally
+\emph{higher} than the Python \texttt{timeit} measurement (which only
+records CPU dispatch time without \texttt{torch.cuda.synchronize()}).
+For example, for the large model at context length 512, nsys reports a
+GPU forward time of 111.2\,ms, while \texttt{timeit} records
+$\sim$60.6\,ms---reflecting only how long the CPU takes to dispatch
+forward kernels asynchronously.
+The wall-clock total per iteration ($\sim$382\,ms with synchronization)
+is consistent with the sum of GPU forward, backward, and optimizer times.
+
+\begin{table}[H]
+\centering
+\caption{GPU-projected forward pass time per iteration (ms).}
+\label{tab:nsys-forward}
+\begin{tabular}{llrr}
+  \toprule
+  Model & Context & GPU Forward (ms) & Python \texttt{timeit} Forward (ms) \\
+  \midrule
+  small & 256  &  11.9 & --- \\
+  small & 1024 &  50.9 & --- \\
+  small & 2048 & 145.3 & --- \\
+  \midrule
+  large & 256  &  60.0 & --- \\
+  large & 512  & 111.2 & 60.6 (ctx=512 benchmark) \\
+  large & 1024 & 300.4 & --- \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+The forward pass time grows roughly quadratically with context length
+(e.g., small: $11.9 \to 50.9 \to 145.3$\,ms for $256 \to 1024 \to 2048$),
+consistent with the $O(T^2)$ attention scaling dominating at longer sequences.
 
 \paragraph{(b) Most time-consuming CUDA kernel.}
 
+The most time-consuming CUDA kernel across all profiles is the
+CUTLASS SGEMM kernel (single-precision general matrix multiply),
+which implements all matmul operations in the Transformer (linear
+projections, attention score computation, FFN layers).
+Table~\ref{tab:nsys-top-kernels} shows the top kernel for each configuration.
+
+\begin{table}[H]
+\centering
+\caption{Top CUDA kernel by cumulative GPU time (full training step).}
+\label{tab:nsys-top-kernels}
+\begin{tabular}{llrlr}
+  \toprule
+  Model & Context & Top Kernel & Time\,\% & Invocations \\
+  \midrule
+  small & 256  & \texttt{sgemm\_128x64\_nn} & 16.9\% & 840 \\
+  small & 1024 & \texttt{sgemm\_128x64\_nn} & 13.3\% & 840 \\
+  small & 2048 & \texttt{sgemm\_128x64\_nn} & 10.2\% & 840 \\
+  \midrule
+  large & 256  & \texttt{sgemm\_128x256\_tn} & 24.3\% & 2530 \\
+  large & 512  & \texttt{sgemm\_128x256\_tn} & 23.3\% & 3240 \\
+  large & 1024 & \texttt{sgemm\_128x256\_tn} & 16.9\% & 2530 \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+The same GEMM kernel class dominates both the forward-only and
+forward+backward profiles.
+During a full training step, GEMM kernels remain the most time-consuming
+category, though their collective share decreases relative to forward-only
+because the backward pass and optimizer introduce additional elementwise
+and reduction operations.
 
 \paragraph{(c) Non-matmul kernels with non-trivial runtime.}
 
+Table~\ref{tab:nsys-gemm-frac} shows that GEMM kernels account for
+49--61\% of total GPU kernel time during a full training step.
+The remaining time is spent on several non-matmul kernel categories:
+
+\begin{itemize}[nosep]
+  \item \texttt{vectorized\_elementwise\_kernel} (mul, add): 6--9\% each,
+    implementing LayerNorm scaling, residual additions, and activation functions.
+  \item \texttt{elementwise\_kernel} (div, subtract): 3--7\%,
+    used in softmax normalization and gradient computation.
+  \item \texttt{reduce\_kernel}: $\sim$3\%, performing reductions
+    for LayerNorm mean/variance and loss computation.
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\caption{GEMM kernel fraction of total GPU kernel time (full training step).}
+\label{tab:nsys-gemm-frac}
+\begin{tabular}{llrr}
+  \toprule
+  Model & Context & GEMM\,\% & Non-GEMM\,\% \\
+  \midrule
+  small & 256  & 58.8 & 41.2 \\
+  small & 1024 & 43.4 & 56.6 \\
+  small & 2048 & 32.1 & 67.9 \\
+  \midrule
+  large & 256  & 61.3 & 38.7 \\
+  large & 512  & 60.5 & 39.5 \\
+  large & 1024 & 49.1 & 50.9 \\
+  \bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{(d) Full training step profile comparison.}
 
+Comparing the GEMM fraction across configurations
+(Table~\ref{tab:nsys-gemm-frac}), we observe two trends:
+(1)~the GEMM fraction decreases with increasing context length
+(e.g., small: $58.8\% \to 43.4\% \to 32.1\%$ for
+$256 \to 1024 \to 2048$), because attention-related elementwise
+operations (softmax, masking, scaling) grow as $O(T^2)$ while
+FFN matmuls grow only as $O(T)$; and
+(2)~during a full training step (forward + backward + optimizer),
+the GEMM fraction is lower than inference-only would suggest because
+the backward pass adds gradient elementwise operations and the
+AdamW optimizer performs per-parameter elementwise updates
+(momentum, variance, weight decay) that are entirely non-GEMM.
 
 \paragraph{(e) Softmax vs.\ matrix multiplication runtime comparison.}
+
+Table~\ref{tab:nsys-attn-breakdown} shows the GPU-projected time per call
+(median) for the three annotated sub-operations within
+\texttt{scaled\_dot\_product\_attention}: the $QK^T$ matmul
+(\texttt{computing attention scores}), softmax, and the
+$\text{attn} \times V$ matmul (\texttt{final matmul}).
+
+\begin{table}[H]
+\centering
+\caption{Attention sub-operation GPU time per call (median, $\mu$s).}
+\label{tab:nsys-attn-breakdown}
+\begin{tabular}{llrrrr}
+  \toprule
+  Model & Context & $QK^T$ ($\mu$s) & Softmax ($\mu$s) & Attn$\times V$ ($\mu$s) & Softmax / Matmul \\
+  \midrule
+  small & 256  &    23.8 &    41.5 &   23.5 & $0.88\times$ \\
+  small & 1024 &   465.7 &  1115.9 &  226.1 & $1.61\times$ \\
+  small & 2048 &  1699.7 &  4413.5 &  698.1 & $1.84\times$ \\
+  \midrule
+  large & 256  &    29.5 &    58.5 &   25.3 & $1.07\times$ \\
+  large & 512  &   119.6 &   271.2 &   88.8 & $1.30\times$ \\
+  large & 1024 &   766.1 &  1863.2 &  320.4 & $1.72\times$ \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+Despite having $\sim$25$\times$ fewer FLOPs than the two attention
+matmuls combined ($O(T^2)$ for softmax vs.\ $O(T^2 \cdot d_{\text{head}})$
+for each matmul, where $d_{\text{head}} = 64$), softmax takes
+\emph{comparable or even more} wall-clock time.
+This is because softmax is \textbf{memory-bound}: it must read and write
+the entire $[B, H, T, T]$ attention score matrix multiple times
+(for row-max subtraction, exponentiation, row-sum, and division),
+while the matmul kernels are \textbf{compute-bound} and can effectively
+utilize the GPU's SIMT units at high arithmetic intensity.
+As context length increases, the softmax-to-matmul runtime ratio grows
+(from $\sim$0.9$\times$ to $\sim$1.8$\times$), because the
+memory-bound softmax becomes increasingly dominant over the
+compute-bound matmuls at larger attention matrices.
 
 
 % ----------------------------------------------------------
@@ -90,20 +447,97 @@
 \subsubsection{Mixed-Precision Accumulation}
 \textbf{Problem (mixed\_precision\_accumulation)}
 
+\begin{lstlisting}[language=Python, caption=Mixed-Precision Accumulation]
+import torch
+
+s = torch.tensor(0, dtype=torch.float32)
+for i in range(1000):
+  s += torch.tensor(0.01, dtype=torch.float32)
+print(s) # tensor(10.0001)
+
+s = torch.tensor(0, dtype=torch.float16)
+for i in range(1000):
+  s += torch.tensor(0.01, dtype=torch.float16)
+print(s) # tensor(9.9531, dtype=torch.float16)
+
+s = torch.tensor(0, dtype=torch.float32)
+for i in range(1000):
+  s += torch.tensor(0.01, dtype=torch.float16)
+print(s) # tensor(10.0021)
+
+s = torch.tensor(0, dtype=torch.float16)
+for i in range(1000):
+  s += torch.tensor(0.01, dtype=torch.float32)
+print(s) # tensor(9.9531, dtype=torch.float16)
+
+\end{lstlisting}
 
 \subsubsection{Benchmarking Mixed Precision}
 \textbf{Problem (benchmarking\_mixed\_precision)}
 
 \paragraph{(a) Data types under FP16 autocasting.}
 
+\begin{itemize}
+  \item the model parameters within the autocast context?: \textbf{FP32}
+  \item the output of the first feed-forward layer? \textbf{FP16}
+  \item the output of layer norm? \textbf{FP32}, since layer norm has reduce operation (mean)
+  \item the model's predicted logits? \textbf{FP16}, from the last fc2, which will use FB16
+  \item the loss? \textbf{FP32}
+  \item the model's gradients? \textbf{FP32}
+\end{itemize}
+
 % TODO: List data types for each component
 
 \paragraph{(b) Layer normalization and BF16.}
 
+For FP16 mixed precision, layer norm's mean/variance computation and the scaling by
+$\beta$ and $\alpha$ are numerically sensitive, because they involve reductions and divisions 
+that can loss precision and underflow in FP16.
 
 \paragraph{(c) Mixed precision benchmarking results.}
 
-% TODO: Insert timing table with/without mixed precision
+Table~\ref{tab:mixed-precision} compares median per-step timings (seconds) for
+FP32 vs.\ BF16 mixed precision across all model sizes (batch~4, context~512,
+10 iterations after 5 warmup steps).  The 10B model OOMs in both precisions.
+
+\begin{table}[h]
+\centering
+\caption{FP32 vs.\ BF16 median per-phase and total step time (seconds).
+  Each phase is timed with \texttt{torch.cuda.synchronize()} barriers.}
+\label{tab:mixed-precision}
+\begin{tabular}{ll rr rr rr r}
+\toprule
+ & & \multicolumn{2}{c}{Forward} & \multicolumn{2}{c}{Backward} & \multicolumn{2}{c}{Optimizer} & \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
+Size & Dtype & Time & Sp. & Time & Sp. & Time & Sp. & Total Sp. \\
+\midrule
+Small  & FP32 & 0.0188 &       & 0.0371 &       & 0.0086 &       & --- \\
+(0.13B)& BF16 & 0.0093 & 2.0$\times$ & 0.0203 & 1.8$\times$ & 0.0081 & 1.1$\times$ & 1.71$\times$ \\
+\midrule
+Medium & FP32 & 0.0497 &       & 0.0987 &       & 0.0225 &       & --- \\
+(0.42B)& BF16 & 0.0215 & 2.3$\times$ & 0.0525 & 1.9$\times$ & 0.0222 & 1.0$\times$ & 1.78$\times$ \\
+\midrule
+Large  & FP32 & 0.1111 &       & 0.2236 &       & 0.0479 &       & --- \\
+(0.97B)& BF16 & 0.0417 & 2.7$\times$ & 0.1091 & 2.1$\times$ & 0.0481 & 1.0$\times$ & 1.93$\times$ \\
+\midrule
+XL     & FP32 & 0.3255 &       & 0.5802 &       & 0.2779 &       & --- \\
+(3.4B) & BF16 & 0.1009 & 3.2$\times$ & 0.2387 & 2.4$\times$ & 0.2776 & 1.0$\times$ & 1.92$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+BF16 mixed precision yields a $1.71\times$--$1.93\times$ end-to-end speedup.
+The per-phase breakdown (with \texttt{torch.cuda.synchronize()} barriers
+between phases) reveals a clear pattern:
+the \textbf{forward pass} benefits most ($2.0$--$3.2\times$), with speedup
+growing as model size increases and GEMMs become more compute-bound;
+the \textbf{backward pass} also accelerates ($1.8$--$2.4\times$) because
+autograd reuses the BF16 activations saved during the forward pass;
+the \textbf{optimizer step} is essentially unchanged ($\approx1.0\times$)
+because AdamW operates on FP32 master weights regardless of autocast.
+The forward-pass speedup exceeds $2\times$ even for the smallest model,
+confirming that BF16 Tensor Cores provide genuine throughput gains rather
+than just memory savings.
 
 % ----------------------------------------------------------
 \subsection{Memory Profiling}
