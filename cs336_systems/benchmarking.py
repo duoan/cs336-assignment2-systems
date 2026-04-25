@@ -32,6 +32,7 @@ def run_benchmark(
     enable_profile: bool=False,
     inference_only: bool=False,
     memory_snapshot_path: str=None,
+    compile: bool=False,
 ):
     """Run a benchmark for given parameters
     
@@ -50,6 +51,7 @@ def run_benchmark(
             Number of heads to use in multi-headed attention. `d_model` must be
             evenly divisible by `num_heads`.
     """
+    torch.set_float32_matmul_precision('high')
     device = torch.accelerator.current_accelerator()
     
     torch.manual_seed(0)
@@ -59,11 +61,15 @@ def run_benchmark(
     
     
     model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff).to(device)
+    if compile:
+        model = torch.compile(model)
+
     num_params = sum(p.numel() for p in model.parameters())
     print(f"Model parameters: {num_params:,} ({num_params / 1e6:.1f}M / {num_params / 1e9:.2f}B)")
     if inference_only:
         model.eval()
     optimizer = AdamW(model.parameters())
+
     autocast_ctx = torch.autocast(device_type="cuda", dtype=dtype) if dtype != torch.float32 else contextlib.nullcontext()
     for _ in range(warmup_steps):
         optimizer.zero_grad()
@@ -114,24 +120,25 @@ def run_benchmark(
             torch.cuda.synchronize()
             start_fw_time = timeit.default_timer()
 
+            nvtx_ctx = contextlib.nullcontext if compile else torch.cuda.nvtx.range
             with autocast_ctx:
-                with torch.cuda.nvtx.range("forward_pass"):
+                with nvtx_ctx("forward_pass"):
                     logits = model(inputs)
                 if not inference_only:
-                    with torch.cuda.nvtx.range("loss_calculation"):
+                    with nvtx_ctx("loss_calculation"):
                         losses = cross_entropy(logits, targets)
             torch.cuda.synchronize()
             events[i]['fw'] = timeit.default_timer() - start_fw_time
 
             if not inference_only:
                 start_bw_time = timeit.default_timer()
-                with torch.cuda.nvtx.range("backward_pass"):
+                with nvtx_ctx("backward_pass"):
                     losses.backward()
                 torch.cuda.synchronize()
                 events[i]['bw'] = timeit.default_timer() - start_bw_time
 
                 start_op_time = timeit.default_timer()
-                with torch.cuda.nvtx.range("optimizer.step"):
+                with nvtx_ctx("optimizer.step"):
                     optimizer.step()
                     optimizer.zero_grad()
                 torch.cuda.synchronize()
@@ -177,6 +184,7 @@ if __name__ == "__main__":
     parser.add_argument("--profile", action="store_true", help="Enable torch profiler and memory snapshot")
     parser.add_argument("--inference-only", action="store_true", help="Run forward pass only (no backward/optimizer)")
     parser.add_argument("--memory-snapshot", type=str, default=None, help="Path to save memory snapshot pickle")
+    parser.add_argument("--compile", action="store_true", help="Enable torch compile")
     args = parser.parse_args()
 
     dtype_map = {"float32": torch.float32, "bfloat16": torch.bfloat16, "float16": torch.float16}
@@ -192,6 +200,7 @@ if __name__ == "__main__":
         enable_profile=args.profile,
         inference_only=args.inference_only,
         memory_snapshot_path=args.memory_snapshot,
+        compile=args.compile,
         dtype=dtype,
         **config,
     )

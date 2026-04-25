@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 import json
 import logging
 import math
@@ -357,6 +358,7 @@ class TransformerBlock(nn.Module):
         num_heads: int,
         d_ff: int,
         positional_encoder: RotaryEmbedding | None,
+        device=None,
     ):
         super().__init__()
         self.attn = CausalMultiHeadSelfAttention(
@@ -399,7 +401,6 @@ class SwiGLU(nn.Module):
     def forward(self, x):
         return self.w2(silu(self.w1(x)) * self.w3(x))
 
-@nvtx.range("scaled_dot_product_attention")
 def scaled_dot_product_attention(
     Q: Float[Tensor, " ... queries d_k"],
     K: Float[Tensor, " ... keys    d_k"],
@@ -425,17 +426,35 @@ def scaled_dot_product_attention(
     """
     
     d_k = K.shape[-1]
-    with nvtx.range("computing attention scores"):
+    attention_scores = einsum(Q, K, "... query d_k, ... key d_k -> ... query key") / math.sqrt(d_k)
+
+    if mask is not None:
+        attention_scores = torch.where(mask, attention_scores, float("-inf"))
+
+    attention_weights = softmax(attention_scores, dim=-1)  # Softmax over the key dimension
+
+    return einsum(attention_weights, V, "... query key, ... key d_v ->  ... query d_v")
+
+@nvtx.range("scaled_dot_product_attention")
+def annotated_scaled_dot_product_attention(
+    Q: Float[Tensor, " ... queries d_k"],
+    K: Float[Tensor, " ... keys    d_k"],
+    V: Float[Tensor, " ... keys    d_v"],
+    mask: Bool[Tensor, " ... queries keys"] | None = None,
+) -> Float[Tensor, " ... queries d_v"]:
+    d_k = K.shape[-1]
+
+    with torch.cuda.nvtx.range("compute scores"):
         attention_scores = einsum(Q, K, "... query d_k, ... key d_k -> ... query key") / math.sqrt(d_k)
 
     if mask is not None:
         attention_scores = torch.where(mask, attention_scores, float("-inf"))
-    with nvtx.range("computing softmax"):
+
+    with torch.cuda.nvtx.range("compute softmax"):
         attention_weights = softmax(attention_scores, dim=-1)  # Softmax over the key dimension
 
-    with nvtx.range("final matmul"):
+    with torch.cuda.nvtx.range("final mutmal"):
         return einsum(attention_weights, V, "... query key, ... key d_v ->  ... query d_v")
-
 
 class CausalMultiHeadSelfAttention(nn.Module):
     """Multi-Head Self-Attention

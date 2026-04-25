@@ -16,6 +16,7 @@ class ToyModel(nn.Module):
     
     
 if __name__ == "__main__":
+    torch.set_float32_matmul_precision('high')
     model = ToyModel(256, 1).to("cuda")
     inputs = torch.randn((32, 256), device="cuda")
     targets = torch.randn((32, 1), device="cuda")

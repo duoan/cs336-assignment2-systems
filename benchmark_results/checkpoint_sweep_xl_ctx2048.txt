@@ -1,0 +1,24 @@
+Model: xl | params: 3,406,809,600 | ctx=2048 batch=4 group_size=1 dtype=torch.float32
+  Peak GPU memory: 63.60 GiB
+Model: xl | params: 3,406,809,600 | ctx=2048 batch=4 group_size=2 dtype=torch.float32
+  Peak GPU memory: 69.56 GiB
+Model: xl | params: 3,406,809,600 | ctx=2048 batch=4 group_size=4 dtype=torch.float32
+  Peak GPU memory: 81.48 GiB
+Model: xl | params: 3,406,809,600 | ctx=2048 batch=4 group_size=8 dtype=torch.float32
+  OOM with group_size=8
+Model: xl | params: 3,406,809,600 | ctx=2048 batch=4 group_size=16 dtype=torch.float32
+  OOM with group_size=16
+Model: xl | params: 3,406,809,600 | ctx=2048 batch=4 group_size=32 dtype=torch.float32
+  OOM with group_size=32
+
+============================================================
+SWEEP RESULTS
+============================================================
+  Group Size    Peak Memory
+------------------------------
+           1         63.60 GiB
+           2         69.56 GiB
+           4         81.48 GiB
+           8            OOM
+          16            OOM
+          32            OOM

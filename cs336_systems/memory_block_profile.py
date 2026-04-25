@@ -21,6 +21,7 @@ MODEL_CONFIGS = {
 
 
 def profile_block_memory(size="xl", context_length=128, batch_size=4):
+    torch.set_float32_matmul_precision('high')
     device = torch.device("cuda")
     cfg = MODEL_CONFIGS[size]
     d_model, d_ff = cfg["d_model"], cfg["d_ff"]
