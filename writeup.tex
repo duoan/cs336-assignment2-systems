@@ -545,24 +545,223 @@ than just memory savings.
 
 \paragraph{(a) Memory timelines.}
 
-% TODO: Insert two images from memory_viz tool
+We profiled the xl model (3.4B parameters) at context length 128 using
+\texttt{torch.cuda.memory.\_record\_memory\_history} and visualised
+the snapshots with PyTorch's \texttt{memory\_viz} tool.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{benchmark_results/memory/xl_ctx128_inference.png}
+  \caption{Inference only (forward pass). Memory is dominated by the
+    12.7 GiB of model weights; transient activations produce thin spikes.}
+  \label{fig:mem-inference}
+\end{subfigure}
+
+\vspace{0.5em}
+
+\begin{subfigure}[b]{\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{benchmark_results/memory/xl_ctx128_train.png}
+  \caption{Full training step. The forward pass builds up saved-for-backward
+    activations (rising slope), the backward pass frees them while
+    allocating gradients (peak then decline), and the optimizer step
+    keeps memory flat.}
+  \label{fig:mem-train}
+\end{subfigure}
+\caption{Active memory timeline for the xl model (ctx=128) from
+  PyTorch \texttt{memory\_viz}.}\label{fig:mem-timelines}
+\end{figure}
+
+\textbf{Inference-only (forward pass):} The timeline shows a single
+``staircase'' pattern --- memory climbs layer-by-layer as each
+\texttt{TransformerBlock} computes its output, then stays flat after
+the final layer.  No gradients or optimizer states are allocated, so
+the peak ($\approx$12.9 GiB) sits only slightly above the
+model-weight baseline ($\approx$12.7 GiB).  Intermediate tensors are
+allocated and freed within each layer, producing small
+sawtooth spikes on top of the staircase.
+
+\textbf{Full training step (forward + backward + optimizer):}  The
+timeline has three distinct phases:
+(1) the forward pass creates the same staircase, but now all
+activations saved for autograd (``residuals'') remain allocated,
+pushing memory steadily upward;
+(2) the backward pass then frees those residuals layer-by-layer
+\emph{while} allocating gradient tensors, producing a characteristic
+``mountain'' that peaks at the transition point ($\approx$51.4 GiB
+overall, since optimizer states are already present from warmup);
+(3) the optimizer step performs in-place updates, so memory stays
+roughly flat.
+The three phases are clearly distinguishable from the shape of the
+timeline.
+
+% HTML timelines are in benchmark_results/memory/*.html --- open in
+% browser and take screenshots for the final PDF.
+\emph{(See \texttt{benchmark\_results/memory/xl\_ctx128\_inference.html}
+and \texttt{xl\_ctx128\_train.html} for the full interactive timelines.)}
 
 \paragraph{(b) Peak memory usage.}
 
-% TODO: Insert table with peak memory per context length
+\begin{table}[h]
+\centering
+\caption{Peak GPU memory allocated (GiB) for the xl model at different context lengths.}\label{tab:peak-mem}
+\begin{tabular}{l r r}
+\toprule
+Context length & Inference only & Full training \\
+\midrule
+128 (batch 4)  & 12.93 & 51.42 \\
+2048 (batch 4) & 21.60 & OOM ($>$95 GiB) \\
+2048 (batch 1) & ---   & 91.16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At context length 128 the forward-only peak is dominated by the
+model weights ($4 \times 3.4\text{B} = 12.7$ GiB in FP32); the
+additional activation memory is negligible.  Training adds optimizer
+states ($2 \times 12.7 = 25.4$ GiB for AdamW first and second
+moments), gradients ($12.7$ GiB), and saved-for-backward activations,
+totalling 51.4 GiB.
+
+At context length 2048, inference peak grows to 21.6 GiB because
+attention score matrices scale as $O(\text{seq}^2)$; training at
+batch 4 exceeds the 95 GiB GPU capacity and OOMs.  Reducing to
+batch 1 allows training to complete at 91.2 GiB.
 
 \paragraph{(c) Mixed precision effect on memory.}
 
+\begin{table}[h]
+\centering
+\caption{Peak GPU memory (GiB) for the xl model: FP32 vs.\ BF16 autocast.}\label{tab:mixed-mem}
+\begin{tabular}{l rr rr}
+\toprule
+& \multicolumn{2}{c}{Inference only} & \multicolumn{2}{c}{Full training} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+Context (batch) & FP32 & BF16 & FP32 & BF16 \\
+\midrule
+128 (batch 4)  & 12.93 & 19.15 & 51.42 & 51.41 \\
+2048 (batch 4) & 21.60 & 25.50 & OOM   & OOM   \\
+2048 (batch 1) & ---   & ---   & 91.16 & 82.49 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The effect of BF16 mixed precision on memory depends on the
+balance between two opposing factors:
+\texttt{torch.autocast} keeps model parameters in FP32 and lazily
+caches BF16 copies of each weight matrix ($\approx$6.3 GiB overhead),
+but activations and saved-for-backward tensors are stored in BF16
+(half the FP32 size).
+For \textbf{inference at short context} (128), the weight-cache
+overhead dominates and BF16 uses \emph{more} memory ($+$6.2 GiB).
+For \textbf{training at short context}, the two effects nearly cancel:
+51.42 vs.\ 51.41 GiB.
+For \textbf{training at long context} (2048, batch 1), the larger
+activation volume tips the balance and BF16 \emph{saves} 8.7 GiB
+(91.16 $\to$ 82.49 GiB).
+In summary, mixed precision does not significantly reduce memory for
+short-context workloads but provides meaningful savings when
+activation memory dominates (long context, large batch).
 
 \paragraph{(d) Size of activation tensor in residual stream.}
 
+For the xl model with batch size $B{=}4$, context length $T{=}512$,
+and $d_\text{model}{=}2560$, the residual-stream activation tensor
+has shape $(B, T, d_\text{model}) = (4, 512, 2560)$.  In FP32,
+each element is 4 bytes, so the tensor size is:
+\[
+  4 \times 512 \times 2560 \times 4 \;\text{bytes}
+  = 20\,971\,520 \;\text{bytes}
+  = \frac{20\,971\,520}{1024^2} = 20 \;\text{MiB}.
+\]
 
 \paragraph{(e) Largest allocations in memory timeline.}
 
+When reducing the ``Detail'' level in \texttt{pytorch.org/memory\_viz},
+the two dominant allocation sizes that remain visible are:
+
+\begin{itemize}
+  \item \textbf{100 MiB} -- FFN weight matrices.  Each has shape
+    $d_\text{model} \times d_\text{ff} = 2560 \times 10240$ in FP32:
+    $2560 \times 10240 \times 4 / 1024^2 = 100$ MiB.
+    There are 96 such blocks (32 layers $\times$ 3 FFN weights per
+    layer: gate, up, and down projections), totalling 9.38 GiB.
+  \item \textbf{$\sim$25 MiB} -- Attention projection weight matrices.
+    Each has shape $d_\text{model} \times d_\text{model} = 2560 \times
+    2560$ in FP32: $2560 \times 2560 \times 4 / 1024^2 = 25$ MiB
+    (allocated as 26 MiB by the CUDA caching allocator).
+    There are 128 such blocks (32 layers $\times$ 4 projections:
+    $W_Q, W_K, W_V, W_O$), totalling 3.25 GiB.
+\end{itemize}
+
+Together these model-parameter allocations account for
+$9.38 + 3.25 = 12.63$ GiB, consistent with the $\sim$12.7 GiB baseline
+observed in the memory timeline.  The stack traces confirm they come
+from \texttt{torch.nn.Parameter} initialization inside
+\texttt{TransformerBlock} linear layers.
 
 \paragraph{(f) Memory saved for backward per TransformerBlock.}
 
-% TODO: Insert Nsight screenshots
+Using \texttt{nsys profile --cuda-memory-usage=true -t cuda,nvtx} combined
+with per-block NVTX ranges and \texttt{torch.cuda.memory\_allocated()} hooks,
+we measured memory allocated during a single \texttt{TransformerBlock}
+forward pass on the xl model (batch 4, ctx 128, FP32).  Each block
+saves $\sim$\textbf{166 MiB} of activations for the backward pass.
+
+\begin{table}[h]
+\centering
+\caption{Per-operation breakdown of saved-for-backward memory
+  within one \texttt{TransformerBlock} (xl, ctx=128, FP32).}
+\label{tab:saved-for-bw}
+\begin{tabular}{l r r}
+\toprule
+Operation & $\Delta$ Memory (MiB) & \% of Total \\
+\midrule
+FFN (SwiGLU)       & 105.0 & 63.2\% \\
+Attention (MHSA)   &  41.2 & 24.8\% \\
+RMSNorm (ln1)      &  10.0 &  6.0\% \\
+RMSNorm (ln2)      &  10.0 &  6.0\% \\
+Residual add (net) &   0.0 &  0.0\% \\
+\midrule
+Total per block    & 166.2 & 100\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+SwiGLU dominates because its three linear projections ($w_1, w_2, w_3$)
+each save their input tensors for \texttt{backward}, and the element-wise
+\texttt{silu} and multiplication further save intermediate activations
+(five $d_\text{ff}$-sized tensors of 20 MiB each $+$ one
+$d_\text{model}$-sized input of 5 MiB $= 105$ MiB).
+
+\medskip\noindent\textbf{Backward-pass gradient memory.}
+During backward through each block, the saved-for-backward tensors
+($\sim$166 MiB) are freed, but new gradient tensors are created.
+We observed:
+\begin{itemize}
+  \item Forward delta (saved for backward): $+166.3$ MiB per block.
+  \item Backward net memory change: $+238.7$ MiB per block.
+  \item Gradient memory created = freed $+$ net change
+    $= 166.3 + 238.7 = 405.0$ MiB.
+\end{itemize}
+Each \texttt{TransformerBlock} has 104,862,720 weight parameters, so
+the expected gradient memory is $104{,}862{,}720 \times 4 \;\text{bytes}
+= 400.0$ MiB.  The observed 405 MiB is within 1.3\% of the expected
+value; the small overhead comes from temporary intermediate gradient
+tensors allocated during backpropagation through composite operations.
+This confirms the result matches expectation.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{\textwidth}
+  \centering
+  \includegraphics[width=\textwidth]{benchmark_results/memory/nsys_block.png}
+  \caption{nsys memory view.}
+  \label{fig:mem-nsys}
+\end{subfigure}
+\end{figure}
 
 
 %% ============================================================

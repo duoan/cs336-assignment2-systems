@@ -64,26 +64,32 @@ def run_benchmark(
     if inference_only:
         model.eval()
     optimizer = AdamW(model.parameters())
+    autocast_ctx = torch.autocast(device_type="cuda", dtype=dtype) if dtype != torch.float32 else contextlib.nullcontext()
     for _ in range(warmup_steps):
         optimizer.zero_grad()
-        if inference_only:
-            with torch.no_grad():
+        with autocast_ctx:
+            if inference_only:
+                with torch.no_grad():
+                    logits = model(inputs)
+            else:
                 logits = model(inputs)
-        else:
-            logits = model(inputs)
-            losses = cross_entropy(logits, targets)
+                losses = cross_entropy(logits, targets)
+        if not inference_only:
             losses.backward()
             optimizer.step()
+    optimizer.zero_grad(set_to_none=True)
     torch.cuda.synchronize()
+    torch.cuda.empty_cache()
     
     print(f"Warmup done, will run benchmark with {repetion_steps} repetion steps (inference_only={inference_only})")
     
     events = [dict() for _ in range(repetion_steps)]
-    autocast_ctx = torch.autocast(device_type="cuda", dtype=dtype) if dtype != torch.float32 else contextlib.nullcontext()
 
     record_memory = enable_profile or memory_snapshot_path is not None
     if record_memory:
         torch.cuda.memory._record_memory_history(max_entries=1_000_000)
+
+    torch.cuda.reset_peak_memory_stats()
 
     def trace_handler(profiler):
         print(f"\n[Step {profiler.step_num}] Profiler Report:")
@@ -137,6 +143,9 @@ def run_benchmark(
 
             if profiler is not None:
                 profiler.step()
+
+    peak_mem = torch.cuda.max_memory_allocated() / (1024**3)
+    print(f"Peak GPU memory allocated: {peak_mem:.2f} GiB")
 
     snapshot_path = memory_snapshot_path or ("memory_snapshot.pickle" if enable_profile else None)
     if record_memory and snapshot_path:
