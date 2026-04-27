@@ -426,14 +426,14 @@ def scaled_dot_product_attention(
     """
     
     d_k = K.shape[-1]
-    attention_scores = einsum(Q, K, "... query d_k, ... key d_k -> ... query key") / math.sqrt(d_k)
+    attention_scores = einsum(Q, K, "... queries d_k, ... keys d_k -> ... queries keys") / math.sqrt(d_k)
 
     if mask is not None:
         attention_scores = torch.where(mask, attention_scores, float("-inf"))
 
     attention_weights = softmax(attention_scores, dim=-1)  # Softmax over the key dimension
 
-    return einsum(attention_weights, V, "... query key, ... key d_v ->  ... query d_v")
+    return einsum(attention_weights, V, "... queries keys, ... keys d_v ->  ... queries d_v")
 
 @nvtx.range("scaled_dot_product_attention")
 def annotated_scaled_dot_product_attention(
@@ -445,7 +445,7 @@ def annotated_scaled_dot_product_attention(
     d_k = K.shape[-1]
 
     with torch.cuda.nvtx.range("compute scores"):
-        attention_scores = einsum(Q, K, "... query d_k, ... key d_k -> ... query key") / math.sqrt(d_k)
+        attention_scores = einsum(Q, K, "... queries d_k, ... keys d_k -> ... queries keys") / math.sqrt(d_k)
 
     if mask is not None:
         attention_scores = torch.where(mask, attention_scores, float("-inf"))
@@ -454,7 +454,8 @@ def annotated_scaled_dot_product_attention(
         attention_weights = softmax(attention_scores, dim=-1)  # Softmax over the key dimension
 
     with torch.cuda.nvtx.range("final mutmal"):
-        return einsum(attention_weights, V, "... query key, ... key d_v ->  ... query d_v")
+        return einsum(attention_weights, V, "... queries keys, ... keys d_v ->  ... queries d_v")
+
 
 class CausalMultiHeadSelfAttention(nn.Module):
     """Multi-Head Self-Attention
@@ -542,7 +543,7 @@ class CausalMultiHeadSelfAttention(nn.Module):
         attn_output = scaled_dot_product_attention(K=K, Q=Q, V=V, mask=causal_mask)
 
         # Concatenate the attention output from all heads.
-        # (..., sequence_length, num_heads * d_v).
+        # (..., sequence_length, num_heads * d_v). 
         attn_output = rearrange(attn_output, "batch heads seq d_v -> batch seq (heads d_v)").contiguous()
 
         # Apply the output projection
