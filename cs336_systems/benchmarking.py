@@ -97,8 +97,17 @@ def run_benchmark(
 
     def trace_handler(profiler):
         print(f"\n[Step {profiler.step_num}] Profiler Report:")
+        
+        print("#" * 100)
+        print("self_cpu_memory_usage")
         print(profiler.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=10))
+        
+        print("#" * 100)
+        print("cpu_time_total")
         print(profiler.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+        
+        print("#" * 100)
+        print("cuda_time_total")
         print(profiler.key_averages().table(sort_by="cuda_time_total", row_limit=10))
 
     profile_ctx = torch.profiler.profile(
@@ -109,6 +118,7 @@ def run_benchmark(
         with_stack=True,
         profile_memory=True,
         record_shapes=True,
+        acc_events=True,
         with_modules=True) if enable_profile else contextlib.nullcontext()
 
     no_grad_ctx = torch.no_grad() if inference_only else contextlib.nullcontext()
