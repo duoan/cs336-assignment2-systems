@@ -3,12 +3,10 @@ import contextlib
 import timeit
 
 import torch
-import torch.cuda.nvtx as nvtx
 
 from cs336_basics.model import BasicsTransformerLM
-from cs336_basics.data import get_batch
 from cs336_basics.optimizer import AdamW
-from cs336_basics.nn_utils import cross_entropy, clip_gradient
+from cs336_basics.nn_utils import cross_entropy
 
 MODEL_CONFIGS = {
     "small":  dict(d_model=768,   d_ff=3072,   num_layers=12, num_heads=12),   # ~125M
@@ -128,21 +126,21 @@ def run_benchmark(
                     with nvtx_ctx("loss_calculation"):
                         losses = cross_entropy(logits, targets)
             torch.cuda.synchronize()
-            events[i]['fw'] = timeit.default_timer() - start_fw_time
+            events[i]['fw'] = (timeit.default_timer() - start_fw_time) * 1000
 
             if not inference_only:
                 start_bw_time = timeit.default_timer()
                 with nvtx_ctx("backward_pass"):
                     losses.backward()
                 torch.cuda.synchronize()
-                events[i]['bw'] = timeit.default_timer() - start_bw_time
+                events[i]['bw'] = (timeit.default_timer() - start_bw_time) * 1000
 
                 start_op_time = timeit.default_timer()
                 with nvtx_ctx("optimizer.step"):
                     optimizer.step()
                     optimizer.zero_grad()
                 torch.cuda.synchronize()
-                events[i]['op'] = timeit.default_timer() - start_op_time
+                events[i]['op'] = (timeit.default_timer() - start_op_time) * 1000
 
                 events[i]['total'] = events[i]['fw'] + events[i]['bw'] + events[i]['op']
             else:
