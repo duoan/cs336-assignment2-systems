@@ -1521,7 +1521,44 @@ L & d & PT eager & PT compile & SDPA & Triton (ours) \\
 \subsection{Distributed Communication}
 \textbf{Problem (distributed\_communication\_single\_node)}
 
-% TODO: Insert plots/tables and commentary after running on Modal (NCCL, multi-GPU)
+We benchmark the \texttt{all\_reduce} operation on a single node with 6
+NVIDIA H100 GPUs (NCCL backend), varying data size
+(1\,MB--1\,GB of float32 tensors) and world size (2, 4, 6 processes).
+Each configuration is timed over 20 iterations after 5 warmup steps;
+we report the median latency averaged across all ranks.
+
+\begin{table}[H]\small\centering
+\caption{All-reduce median latency (ms) by data size and world size (NCCL, 6$\times$H100).}
+\label{tab:all-reduce}
+\begin{tabular}{r rrrr}
+\toprule
+World size & 1\,MB & 10\,MB & 100\,MB & 1\,GB \\
+\midrule
+2 & 0.648 & 3.287 & 40.020 & 402.468 \\
+4 & 1.349 & 6.352 & 57.549 & 734.689 \\
+6 & 1.514 & 6.511 & 83.715 & 772.186 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.75\textwidth]{benchmark_results/all_reduce_benchmark.png}
+\caption{All-reduce latency vs.\ data size, grouped by world size
+(NCCL, log-scale $y$-axis).}
+\label{fig:all-reduce}
+\end{figure}
+
+\textbf{Observations.}
+Latency scales roughly linearly with data size: going from 1\,MB to 1\,GB
+increases latency by $\sim620\times$ (2 GPUs) to $\sim510\times$ (6 GPUs),
+consistent with bandwidth-dominated communication.
+Increasing the world size from 2 to 6 roughly doubles the latency for large
+messages (402\,ms $\to$ 772\,ms at 1\,GB), reflecting the ring all-reduce
+cost scaling as $\tfrac{2(N-1)}{N} \cdot S / W$, where additional ranks add
+communication rounds.
+For small messages ($\le$10\,MB), latency overhead from 4$\to$6 GPUs is
+minimal (6.35$\to$6.51\,ms at 10\,MB), suggesting the per-message launch
+latency dominates over the incremental bandwidth cost.
 
 % ----------------------------------------------------------
 \subsection{Na\"ive DDP Benchmarking}
