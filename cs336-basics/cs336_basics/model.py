@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
 import json
 import logging
 import math
@@ -401,6 +400,7 @@ class SwiGLU(nn.Module):
     def forward(self, x):
         return self.w2(silu(self.w1(x)) * self.w3(x))
 
+
 def scaled_dot_product_attention(
     Q: Float[Tensor, " ... queries d_k"],
     K: Float[Tensor, " ... keys    d_k"],
@@ -424,7 +424,7 @@ def scaled_dot_product_attention(
         with the output of running your scaled dot product attention
         implementation with the provided key, query, and value tensors.
     """
-    
+
     d_k = K.shape[-1]
     attention_scores = einsum(Q, K, "... queries d_k, ... keys d_k -> ... queries keys") / math.sqrt(d_k)
 
@@ -434,6 +434,7 @@ def scaled_dot_product_attention(
     attention_weights = softmax(attention_scores, dim=-1)  # Softmax over the key dimension
 
     return einsum(attention_weights, V, "... queries keys, ... keys d_v ->  ... queries d_v")
+
 
 @nvtx.range("scaled_dot_product_attention")
 def annotated_scaled_dot_product_attention(
@@ -543,7 +544,7 @@ class CausalMultiHeadSelfAttention(nn.Module):
         attn_output = scaled_dot_product_attention(K=K, Q=Q, V=V, mask=causal_mask)
 
         # Concatenate the attention output from all heads.
-        # (..., sequence_length, num_heads * d_v). 
+        # (..., sequence_length, num_heads * d_v).
         attn_output = rearrange(attn_output, "batch heads seq d_v -> batch seq (heads d_v)").contiguous()
 
         # Apply the output projection
