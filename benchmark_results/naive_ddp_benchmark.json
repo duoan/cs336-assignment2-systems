@@ -1,0 +1,10 @@
+{
+  "total_median_ms": 1628.2484065002336,
+  "total_mean_ms": 1628.5413059001257,
+  "total_std_ms": 1.0643766328799467,
+  "comm_median_ms": 100.34199974984404,
+  "comm_mean_ms": 100.39528859997517,
+  "comm_std_ms": 0.41346543606039105,
+  "comm_fraction": 0.0616257318903322,
+  "impl": "naive"
+}

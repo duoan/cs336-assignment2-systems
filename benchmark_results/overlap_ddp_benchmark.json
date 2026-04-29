@@ -1,0 +1,10 @@
+{
+  "total_median_ms": 1578.786579750016,
+  "total_mean_ms": 1578.8420768999913,
+  "total_std_ms": 0.7317488080221141,
+  "comm_median_ms": 17.951179750042456,
+  "comm_mean_ms": 18.024419350001608,
+  "comm_std_ms": 0.2354722646809858,
+  "comm_fraction": 0.011370238371854436,
+  "impl": "overlap"
+}

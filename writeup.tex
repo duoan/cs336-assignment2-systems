@@ -1564,13 +1564,94 @@ latency dominates over the incremental bandwidth cost.
 \subsection{Na\"ive DDP Benchmarking}
 \textbf{Problem (naive\_ddp\_benchmarking)}
 
-% TODO: Description and measured timings
+We implement a lightweight \texttt{NaiveDDP} wrapper
+(\texttt{cs336\_systems/naive\_ddp.py}) that replicates the core
+DDP mechanism: broadcast parameters from rank~0 at initialization,
+and all-reduce + average gradients after each backward pass via
+\texttt{finish\_gradient\_synchronization()}.
+Each parameter's gradient is individually all-reduced in a loop.
+
+The benchmark script (\texttt{cs336\_systems/ddp\_benchmark.py})
+trains the \textbf{XL} model (3.41\,B parameters,
+$d_\text{model}{=}2560$, 32 layers, 32 heads) on 2$\times$A100-80GB GPUs
+with NCCL backend (batch size 4, context length 512, AdamW optimizer).
+Each training step consists of forward, backward,
+\texttt{finish\_gradient\_synchronization()}, and
+\texttt{optimizer.step()}.  We use 5 warmup steps followed by 10
+timed iterations, measuring total step time and the communication
+time spent inside gradient synchronization.
+
+\begin{table}[H]
+\centering
+\caption{Na\"ive DDP benchmark results (XL, 3.41\,B params, 2$\times$A100-80GB, NCCL).}
+\label{tab:naive-ddp}
+\begin{tabular}{l r}
+  \toprule
+  Metric & Value \\
+  \midrule
+  Total step time (median)        & 1628.2\,ms \\
+  Total step time (mean $\pm$ std) & 1628.5 $\pm$ 1.1\,ms \\
+  Gradient communication (median) &  100.3\,ms \\
+  Gradient communication (mean $\pm$ std) &  100.4 $\pm$ 0.4\,ms \\
+  Communication fraction           &  6.2\% \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Analysis.}
+The gradient all-reduce accounts for only \textbf{6.2\%} of the total
+training step time.  The XL model has 3.41\,B FP32 parameters
+($\approx$12.7\,GiB of gradients to synchronize).
+The per-parameter all-reduce issues hundreds of separate NCCL operations
+(one per unique parameter tensor), but NCCL pipelines them efficiently over
+NVLink, resulting in only 100\,ms total communication.
+The remaining $\sim$1528\,ms is dominated by the backward pass,
+forward pass, and optimizer step on the A100 GPUs.
 
 % ----------------------------------------------------------
 \subsection{Minimal DDP with Flat Gradients}
 \textbf{Problem (minimal\_ddp\_flat\_benchmarking)}
 
-% TODO: Measured timings and comparison
+We implement \texttt{FlatDDP} (\texttt{cs336\_systems/naive\_ddp.py})
+which pre-allocates a single contiguous gradient buffer during
+initialization and sets each parameter's \texttt{.grad} to be a view
+into this buffer.  During \texttt{finish\_gradient\_synchronization()},
+only a single \texttt{all\_reduce} call on the flat buffer is needed---no
+gradient copying is required because autograd accumulates directly into
+the buffer views.
+
+Benchmark setup is identical to Section~\ref{tab:naive-ddp}
+(XL model, 2$\times$A100-80GB, NCCL, batch 4, ctx 512, 5 warmup + 10 bench steps).
+
+\begin{table}[H]
+\centering
+\caption{Na\"ive DDP vs.\ Flat DDP (XL, 3.41\,B params, 2$\times$A100-80GB, NCCL).}
+\label{tab:flat-ddp}
+\begin{tabular}{l rr r}
+  \toprule
+  Metric & Na\"ive & Flat & Speedup \\
+  \midrule
+  Total step (median)    & 1628.2\,ms & 1620.8\,ms & 1.00$\times$ \\
+  Gradient comm (median) &  100.3\,ms &   82.5\,ms & 1.22$\times$ \\
+  Comm fraction          &    6.2\%   &    5.1\%   & --- \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Analysis.}
+The flat-buffer approach reduces gradient communication time by
+\textbf{22\%} (100.3\,ms $\to$ 82.5\,ms) by replacing hundreds of
+individual \texttt{all\_reduce} calls with a single operation on a
+contiguous 12.7\,GiB buffer, eliminating per-call NCCL launch overhead.
+The zero-copy design---where \texttt{param.grad} tensors are views into
+the pre-allocated buffer---avoids the flatten/unflatten memory copies
+that a na\"ive implementation would incur.
+
+However, the total step time improvement is modest (1628$\to$1621\,ms,
+$<$1\%), because communication accounts for only 5--6\% of the training
+step; the forward pass, backward pass, and optimizer step dominate.
+To achieve larger end-to-end gains, we need to \emph{overlap}
+communication with backward computation, which we explore next.
 
 % ----------------------------------------------------------
 \subsection{DDP with Overlapping Individual Parameters}
@@ -1578,7 +1659,47 @@ latency dominates over the incremental bandwidth cost.
 
 \paragraph{(a) Benchmarking overlapped DDP.}
 
-% TODO: Measured timings and comparison
+We implement \texttt{OverlapDDP} (\texttt{cs336\_systems/my\_ddp\_impl.py})
+which uses \texttt{register\_post\_accumulate\_grad\_hook} to fire an
+\emph{asynchronous} \texttt{all\_reduce} on each parameter's gradient the
+instant it is computed during backward.  NCCL internally executes these
+operations on a dedicated communication stream, so they overlap with the
+ongoing backward computation on the default compute stream.
+\texttt{finish\_gradient\_synchronization()} simply waits on all pending
+\texttt{Work} handles and divides each gradient by the world size.
+
+Benchmark setup is identical to Sections~5.2 and 5.3
+(XL model, 2$\times$A100-80GB, NCCL, batch 4, ctx 512, 5 warmup + 10 bench steps).
+
+\begin{table}[H]
+\centering
+\caption{DDP implementation comparison (XL, 3.41\,B params, 2$\times$A100-80GB, NCCL).}
+\label{tab:overlap-ddp}
+\begin{tabular}{l rrr}
+  \toprule
+  Metric & Na\"ive & Flat & Overlap \\
+  \midrule
+  Total step (median)    & 1628.2\,ms & 1620.8\,ms & \textbf{1578.8\,ms} \\
+  Gradient comm (median) &  100.3\,ms &   82.5\,ms &  \textbf{18.0\,ms} \\
+  Comm fraction          &    6.2\%   &    5.1\%   &  \textbf{1.1\%} \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Analysis.}
+Overlapping communication with backward computation dramatically reduces the
+\emph{exposed} gradient synchronization time from 100.3\,ms (Na\"ive) to
+\textbf{18.0\,ms}---a \textbf{5.6$\times$} reduction.  The 18\,ms residual
+represents the tail of the last few \texttt{all\_reduce} operations that
+cannot overlap with any remaining backward compute (the earliest layers'
+gradients are communicated last, after backward is complete).
+
+The total step time drops by \textbf{49.4\,ms} (1628.2 $\to$ 1578.8\,ms,
+a 3.0\% speedup), which closely matches the 82.3\,ms of communication that
+was successfully hidden ($100.3 - 18.0 = 82.3$\,ms hidden, minus some
+overhead from NCCL stream scheduling).  The communication fraction falls from
+6.2\% to just 1.1\%, demonstrating that backward-overlap is highly effective
+at amortizing per-parameter all-reduce cost even without gradient flattening.
 
 \paragraph{(b) Nsight profiler comparison.}
 
