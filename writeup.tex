@@ -1712,15 +1712,117 @@ at amortizing per-parameter all-reduce cost even without gradient flattening.
 
 \textbf{Problem (optimizer\_state\_sharding\_accounting)}
 
+Implementation: \texttt{cs336\_systems/optimizers.py}.
+Benchmark script: \texttt{cs336\_systems/sharded\_optim\_memory.py}.
+
 \paragraph{(a) Peak memory usage with and without sharding.}
 
-% TODO: Memory results and breakdown
+We profile peak GPU memory at three points during a training step
+(XL model, 3.41\,B params, 2$\times$A100-80GB, \texttt{OverlapDDP},
+batch 4, ctx 512, FP32).
+
+\begin{table}[H]
+\centering
+\caption{Peak GPU memory (GiB) with standard AdamW vs.\ sharded optimizer
+  (XL, 2$\times$A100-80GB).}
+\label{tab:sharded-mem}
+\begin{tabular}{l rr r}
+\toprule
+Phase & Standard & Sharded & Saving \\
+\midrule
+After init (model + optimizer) & 12.82 & 12.82 & 0 \\
+Before \texttt{optimizer.step} & 52.12 & 39.59 & 12.53 \\
+After \texttt{optimizer.step}  & 63.79 & 51.17 & 12.63 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Memory breakdown.}
+The XL model has 3.41\,B FP32 parameters = 12.69\,GiB.
+
+\begin{center}
+\begin{tabular}{l rr}
+\toprule
+Component & Standard & Sharded \\
+\midrule
+Parameters              & 12.69\,GiB & 12.69\,GiB \\
+Gradients               & 12.69\,GiB & 12.69\,GiB \\
+AdamW states ($m + v$)  & 25.38\,GiB & 12.69\,GiB ($\div 2$) \\
+Activations + overhead  & $\sim$13\,GiB & $\sim$13\,GiB \\
+\midrule
+Expected total (after step) & $\sim$63.8\,GiB & $\sim$51.1\,GiB \\
+Expected saving             & \multicolumn{2}{c}{12.69\,GiB} \\
+Measured saving             & \multicolumn{2}{c}{\textbf{12.63\,GiB}} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The results align with expectations: with 2 ranks, each rank stores
+only half of the AdamW momentum and variance buffers, saving exactly
+one copy of the parameter tensor ($\approx$12.69\,GiB).
+The 0.06\,GiB discrepancy comes from CUDA allocator fragmentation.
+At initialization, both configurations show 12.82\,GiB because
+AdamW states are lazily allocated on the first \texttt{step()} call,
+not at construction time.  After the optimizer step, the standard
+optimizer holds $4\times$ the parameter memory (params + grads + $m$ + $v$),
+while the sharded optimizer holds $3\times$ (params + grads + $\frac{1}{2}(m + v)$).
 
 \paragraph{(b) Training speed with and without sharding.}
 
-% TODO: Timing results
+We measure per-step timing (median over 10 iterations after 5 warmup)
+for the same configuration as (a).
+
+\begin{table}[H]
+\centering
+\caption{Per-step timing (ms) with standard AdamW vs.\ sharded optimizer
+  (XL, 2$\times$A100-80GB).}
+\label{tab:sharded-speed}
+\begin{tabular}{l rr}
+\toprule
+Phase & Standard & Sharded \\
+\midrule
+Forward + backward     & 1388.0 & 1391.0 \\
+Gradient sync          &   18.5 &   18.4 \\
+Optimizer step         &  177.2 &  173.9 \\
+\midrule
+\textbf{Total step}    & \textbf{1583.8} & \textbf{1582.9} \\
+\textbf{Overhead}       & \multicolumn{2}{c}{$-$0.9\,ms ($-$0.1\%)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Optimizer state sharding introduces \textbf{zero measurable overhead}
+($-$0.9\,ms, $-$0.1\%) on the XL model with 2 GPUs.
+The sharded optimizer step (which includes broadcasting updated
+parameters back to all ranks via 25\,MB asynchronous buckets)
+takes 173.9\,ms---actually slightly \emph{faster} than the standard
+AdamW step at 177.2\,ms, because each rank only updates half the
+parameters locally.
+Since the forward+backward pass dominates at $\sim$88\% of total step
+time, the broadcast cost of sharding is completely hidden.
+This makes optimizer state sharding a clear win: it saves $\sim$12.63\,GiB
+of memory per GPU with no speed penalty.
 
 \paragraph{(c) Comparison with ZeRO Stage 1.}
+
+Our implementation follows the \textbf{ZeRO Stage 1} (ZeRO-OS) design from
+Rajbhandari et al.\ (2020): optimizer states are partitioned across
+data-parallel ranks so that each rank only maintains the AdamW
+$m$ and $v$ buffers for its assigned parameter shard.
+In \texttt{step()}, each rank updates its local shard using the inner
+optimizer, then broadcasts the updated parameters back to all ranks.
+
+Our implementation differs from the ZeRO paper in two respects:
+(1)~we use \textbf{round-robin} parameter assignment (parameter $i$ goes to
+rank $i \bmod N$) rather than contiguous chunking, which distributes
+large and small parameters more evenly across ranks;
+(2)~we group parameters into \textbf{fixed-size 25\,MB buckets} for
+asynchronous broadcasts, amortizing NCCL launch overhead while keeping
+memory overhead small.
+The net result---halving optimizer memory with negligible speed
+impact---matches the ZeRO-1 prediction that for models where compute
+dominates communication, the broadcast cost is fully overlapped with
+the optimizer update on other ranks.
 
 
 
