@@ -1,0 +1,15 @@
+{
+  "label": "FSDP checkpoint",
+  "mode": "fsdp_checkpoint",
+  "num_params": 3406809600,
+  "param_bytes": 13627238400,
+  "mem_after_init": 13813540864,
+  "mem_before_step": 42343689216,
+  "mem_after_step": 42343689216,
+  "total_median_ms": 1597.1780477484572,
+  "total_mean_ms": 1597.3288482491625,
+  "total_std_ms": 1.1417016839032272,
+  "fwd_bwd_median_ms": 1558.0350412419648,
+  "sync_median_ms": 7.436704741849098,
+  "optim_median_ms": 31.622003254597075
+}

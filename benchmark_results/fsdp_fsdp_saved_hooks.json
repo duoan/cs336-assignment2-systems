@@ -1,0 +1,15 @@
+{
+  "label": "FSDP saved_hooks",
+  "mode": "fsdp_saved_hooks",
+  "num_params": 3406809600,
+  "param_bytes": 13627238400,
+  "mem_after_init": 13813540864,
+  "mem_before_step": 49062439936,
+  "mem_after_step": 49062439936,
+  "total_median_ms": 1763.4798580002098,
+  "total_mean_ms": 1763.4187366876404,
+  "total_std_ms": 1.7313530864783693,
+  "fwd_bwd_median_ms": 1722.5710799998524,
+  "sync_median_ms": 9.217586750310147,
+  "optim_median_ms": 31.83185074976791
+}

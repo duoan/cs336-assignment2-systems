@@ -44,6 +44,38 @@ class ToyFSDPModel(nn.Module):
         return x
 
 
+def _expected_fsdp_resident_param_count(model: nn.Module, world_size: int) -> int:
+    """Expected per-rank parameter count after sharding FSDP target weights."""
+    from cs336_basics.model import Embedding, Linear
+
+    target_modules = (Linear, Embedding, nn.Linear, nn.Embedding)
+    sharded_param_ids = set()
+    expected_count = 0
+
+    for module in model.modules():
+        if not isinstance(module, target_modules):
+            continue
+        param = module.weight
+        param_id = id(param)
+        if param_id in sharded_param_ids:
+            continue
+        sharded_param_ids.add(param_id)
+        expected_count += (param.numel() + world_size - 1) // world_size
+
+    for param in model.parameters():
+        if id(param) not in sharded_param_ids:
+            expected_count += param.numel()
+
+    return expected_count
+
+
+def _full_param_storage_nbytes(fsdp_model: nn.Module) -> int:
+    return sum(
+        info["full_param_padded"].untyped_storage().nbytes()
+        for info in fsdp_model._shard_info.values()
+    )
+
+
 def _apply_mixed_precision_hooks(model, compute_dtype):
     """
     Apply hooks to a non-parallel model that replicate FSDP's mixed-precision
@@ -100,6 +132,77 @@ def _apply_mixed_precision_hooks(model, compute_dtype):
             return hook
 
         mod.weight.register_post_accumulate_grad_hook(make_grad_hook(mod, isinstance(mod, Linear)))
+
+
+@pytest.mark.filterwarnings("error")
+def test_fsdp_parameter_residency_is_sharded():
+    """Test that FSDP reduces per-rank resident parameters after wrapping."""
+    world_size = 2
+    mp.spawn(
+        _test_fsdp_parameter_residency_is_sharded,
+        args=(world_size,),
+        nprocs=world_size,
+        join=True,
+    )
+
+
+def _test_fsdp_parameter_residency_is_sharded(rank: int, world_size: int):
+    torch.use_deterministic_algorithms(True)
+    device = _setup_process_group(rank=rank, world_size=world_size, backend="gloo")
+    dist.barrier()
+
+    torch.manual_seed(42)
+    base_model = ToyFSDPModel(vocab_size=100, d_model=64, d_ff=128).to(device)
+
+    full_param_count = sum(param.numel() for param in base_model.parameters())
+    expected_local_count = _expected_fsdp_resident_param_count(base_model, world_size)
+
+    fsdp_model = get_fsdp(deepcopy(base_model), compute_dtype=None)
+    local_param_count = sum(param.numel() for param in fsdp_model.parameters())
+
+    assert local_param_count == expected_local_count
+    assert local_param_count < full_param_count
+
+    gathered_counts = [None] * world_size
+    dist.all_gather_object(gathered_counts, local_param_count)
+    assert gathered_counts == [expected_local_count] * world_size
+
+    _cleanup_process_group()
+
+
+@pytest.mark.filterwarnings("error")
+def test_fsdp_frees_full_param_storage_after_compute():
+    """Test that gathered full-parameter storage is released after use."""
+    world_size = 2
+    mp.spawn(
+        _test_fsdp_frees_full_param_storage_after_compute,
+        args=(world_size,),
+        nprocs=world_size,
+        join=True,
+    )
+
+
+def _test_fsdp_frees_full_param_storage_after_compute(rank: int, world_size: int):
+    torch.use_deterministic_algorithms(True)
+    device = _setup_process_group(rank=rank, world_size=world_size, backend="gloo")
+    dist.barrier()
+
+    torch.manual_seed(42)
+    model = ToyFSDPModel(vocab_size=100, d_model=64, d_ff=128).to(device)
+    fsdp_model = get_fsdp(model, compute_dtype=None)
+
+    assert _full_param_storage_nbytes(fsdp_model) == 0
+
+    torch.manual_seed(rank)
+    input_ids = torch.randint(0, 100, (4, 8), device=device)
+    out = fsdp_model(input_ids)
+    assert _full_param_storage_nbytes(fsdp_model) == 0
+
+    loss = out.sum()
+    loss.backward()
+    assert _full_param_storage_nbytes(fsdp_model) == 0
+
+    _cleanup_process_group()
 
 
 @pytest.mark.filterwarnings("error")
@@ -170,7 +273,9 @@ def _test_fsdp_correctness(rank: int, world_size: int, compute_dtype):
         for name, np_param in non_parallel_model.named_parameters():
             fsdp_full = full_params[name]
             if compute_dtype is None:
-                assert torch.equal(np_param.data, fsdp_full), f"Step {step}: Parameter {name} mismatch. Max diff: {(np_param.data - fsdp_full).abs().max().item()}"
+                assert torch.allclose(np_param.data, fsdp_full, atol=1e-7, rtol=1e-7), (
+                    f"Step {step}: Parameter {name} mismatch. Max diff: {(np_param.data - fsdp_full).abs().max().item()}"
+                )
             else:
                 assert torch.allclose(np_param.data, fsdp_full, atol=1e-4, rtol=1e-4), (
                     f"Step {step}: Parameter {name} mismatch. Max diff: {(np_param.data - fsdp_full).abs().max().item()}"

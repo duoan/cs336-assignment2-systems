@@ -1,0 +1,15 @@
+{
+  "label": "FSDP fp32 + AdamW",
+  "mode": "fsdp_fp32",
+  "num_params": 3406809600,
+  "param_bytes": 13627238400,
+  "mem_after_init": 13813540864,
+  "mem_before_step": 55774768128,
+  "mem_after_step": 55774768128,
+  "total_median_ms": 1596.5799887453613,
+  "total_mean_ms": 1597.2048936901047,
+  "total_std_ms": 1.660295961947896,
+  "fwd_bwd_median_ms": 1557.6892184981261,
+  "sync_median_ms": 7.171381250373088,
+  "optim_median_ms": 31.64588375148014
+}
