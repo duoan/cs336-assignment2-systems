@@ -182,3 +182,4 @@ cython_debug/
 
 *.pickle
 *.nsys-rep
+!fsdp_profile_nsys.log

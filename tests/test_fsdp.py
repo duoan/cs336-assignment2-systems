@@ -44,6 +44,21 @@ class ToyFSDPModel(nn.Module):
         return x
 
 
+class OutOfOrderFSDPModel(nn.Module):
+    """Model whose module registration order differs from forward execution."""
+
+    def __init__(self, d_model=8):
+        super().__init__()
+        from cs336_basics.model import Linear
+
+        self.w1 = Linear(d_model, d_model)
+        self.w2 = Linear(d_model, d_model)
+        self.w3 = Linear(d_model, d_model)
+
+    def forward(self, x):
+        return self.w2(torch.relu(self.w3(torch.relu(self.w1(x)))))
+
+
 def _expected_fsdp_resident_param_count(model: nn.Module, world_size: int) -> int:
     """Expected per-rank parameter count after sharding FSDP target weights."""
     from cs336_basics.model import Embedding, Linear
@@ -166,6 +181,58 @@ def _test_fsdp_parameter_residency_is_sharded(rank: int, world_size: int):
     gathered_counts = [None] * world_size
     dist.all_gather_object(gathered_counts, local_param_count)
     assert gathered_counts == [expected_local_count] * world_size
+
+    _cleanup_process_group()
+
+
+@pytest.mark.filterwarnings("error")
+def test_fsdp_learns_runtime_forward_order_for_prefetch():
+    """Test that prefetch order follows actual hook execution, not registration."""
+    world_size = 2
+    mp.spawn(
+        _test_fsdp_learns_runtime_forward_order_for_prefetch,
+        args=(world_size,),
+        nprocs=world_size,
+        join=True,
+    )
+
+
+def _test_fsdp_learns_runtime_forward_order_for_prefetch(rank: int, world_size: int):
+    torch.use_deterministic_algorithms(True)
+    device = _setup_process_group(rank=rank, world_size=world_size, backend="gloo")
+    dist.barrier()
+
+    torch.manual_seed(42)
+    model = OutOfOrderFSDPModel(d_model=8).to(device)
+    fsdp_model = get_fsdp(model, compute_dtype=None)
+
+    assert fsdp_model._ordered_layers == [
+        fsdp_model.module.w1,
+        fsdp_model.module.w2,
+        fsdp_model.module.w3,
+    ]
+
+    x = torch.randn(4, 8, device=device)
+    fsdp_model(x)
+
+    assert not fsdp_model._pending_work
+    assert fsdp_model._ordered_layers == [
+        fsdp_model.module.w1,
+        fsdp_model.module.w3,
+        fsdp_model.module.w2,
+    ]
+    assert fsdp_model._layer_index[id(fsdp_model.module.w1)] == 0
+    assert fsdp_model._layer_index[id(fsdp_model.module.w3)] == 1
+    assert fsdp_model._layer_index[id(fsdp_model.module.w2)] == 2
+
+    out = fsdp_model(x)
+    pending = list(fsdp_model._pending_work.values())
+    assert len(pending) == 1
+    assert pending[0][3] == "bwd"
+    assert pending[0][4] == 2
+
+    out.sum().backward()
+    assert not fsdp_model._pending_work
 
     _cleanup_process_group()
 

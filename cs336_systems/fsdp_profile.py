@@ -1,14 +1,24 @@
-"""Profile FSDP all-gather overlap with torch.profiler.
+"""Profile FSDP all-gather overlap with Nsight Systems.
 
-Generates Chrome traces viewable in https://ui.perfetto.dev
-and prints timing analysis of all-gather vs compute overlap.
+The Modal entrypoint launches an inner worker process under ``nsys profile``.
+That lets Nsight Systems observe the full multiprocessing/NCCL/CUDA process
+tree and collect the real timeline rather than only torch.profiler aggregates.
 
 Usage (Modal):
   modal run cs336_systems/fsdp_profile.py
+
+The local output is written to:
+  benchmark_results/fsdp_profile.nsys-rep
+  benchmark_results/fsdp_profile_nsys.log
+  benchmark_results/fsdp_profile_nsys_stats.txt
 """
 
+import argparse
 import base64
 import os
+import shutil
+import subprocess
+import sys
 
 import modal
 
@@ -22,13 +32,16 @@ WORLD_SIZE = 2
 
 MODEL_CONFIG = dict(d_model=2560, d_ff=10240, num_layers=32, num_heads=32)
 
-TRACE_DIR = "/tmp/fsdp_traces"
+PROFILE_DIR = "/tmp/fsdp_nsys"
+NSYS_OUTPUT_BASE = f"{PROFILE_DIR}/fsdp_profile"
+NSYS_REPORT_PATH = f"{NSYS_OUTPUT_BASE}.nsys-rep"
 
 
 def _worker(rank, world_size):
     import warnings
     warnings.filterwarnings("ignore")
     import torch
+    import torch.cuda.nvtx as nvtx
     import torch.distributed as dist
 
     os.environ["MASTER_ADDR"] = "localhost"
@@ -57,15 +70,32 @@ def _worker(rank, world_size):
     targets = all_data[offset : offset + local_bs, 1:]
 
     def train_step():
+        nvtx.range_push("zero_grad")
         optimizer.zero_grad()
+        nvtx.range_pop()
+
+        nvtx.range_push("forward")
         logits = fsdp_model(inputs)
+        nvtx.range_pop()
+
+        nvtx.range_push("loss")
         loss = cross_entropy(logits, targets)
+        nvtx.range_pop()
+
+        nvtx.range_push("backward")
         loss.backward()
+        nvtx.range_pop()
+
+        nvtx.range_push("finish_gradient_synchronization")
         fsdp_model.finish_gradient_synchronization()
+        nvtx.range_pop()
+
+        nvtx.range_push("optimizer_step")
         optimizer.step()
+        nvtx.range_pop()
 
     if rank == 0:
-        print(f"[fsdp_profile] warmup={WARMUP_STEPS}, profile=1 step")
+        print(f"[fsdp_profile] warmup={WARMUP_STEPS}, nsys capture=1 step")
 
     for i in range(WARMUP_STEPS):
         train_step()
@@ -73,93 +103,115 @@ def _worker(rank, world_size):
             print(f"  warmup {i + 1}/{WARMUP_STEPS}")
 
     dist.barrier()
-
-    os.makedirs(TRACE_DIR, exist_ok=True)
-    trace_path = f"{TRACE_DIR}/fsdp_rank{rank}.json"
-
-    with torch.profiler.profile(
-        activities=[
-            torch.profiler.ProfilerActivity.CPU,
-            torch.profiler.ProfilerActivity.CUDA,
-        ],
-        record_shapes=True,
-        with_stack=False,
-    ) as prof:
-        train_step()
-
-    prof.export_chrome_trace(trace_path)
+    torch.cuda.synchronize()
 
     if rank == 0:
-        print(f"[fsdp_profile] rank {rank} trace: {os.path.getsize(trace_path) / 1e6:.1f} MB")
+        print("[fsdp_profile] starting CUDA profiler capture")
 
-        table = prof.key_averages()
+    # ``nsys profile --capture-range=cudaProfilerApi`` records only the region
+    # bracketed by cudaProfilerStart/Stop. This keeps warmup out of the trace
+    # while still allowing nsys to launch and observe the whole process tree.
+    fsdp_model.clear_wait_profile()
+    torch.cuda.cudart().cudaProfilerStart()
+    nvtx.range_push(f"rank_{rank}_profiled_train_step")
+    train_step()
+    nvtx.range_pop()
+    torch.cuda.synchronize()
+    dist.barrier()
+    torch.cuda.cudart().cudaProfilerStop()
 
-        nccl_total_us = 0
-        nccl_items = []
-        compute_total_us = 0
-        compute_items = []
-
-        for evt in table:
-            name = evt.key
-            cuda_us = getattr(evt, "device_time_total", 0) or getattr(evt, "cuda_time_total", 0)
-            if cuda_us <= 0:
-                continue
-            if "nccl" in name.lower():
-                nccl_total_us += cuda_us
-                nccl_items.append((name, cuda_us, evt.count))
-            elif any(k in name.lower() for k in ["gemm", "mm", "matmul", "addmm", "bmm"]):
-                compute_total_us += cuda_us
-                compute_items.append((name, cuda_us, evt.count))
-
-        summary_lines = []
-        summary_lines.append("=" * 70)
-        summary_lines.append("  FSDP All-Gather Timing Analysis (rank 0)")
-        summary_lines.append("=" * 70)
-
-        summary_lines.append(f"\nTotal NCCL time: {nccl_total_us / 1000:.1f} ms")
-        for name, us, count in sorted(nccl_items, key=lambda x: -x[1]):
-            summary_lines.append(f"  {name:<50s} {us/1000:>8.1f} ms  (x{count})")
-
-        summary_lines.append(f"\nTotal compute (matmul) time: {compute_total_us / 1000:.1f} ms")
-        for name, us, count in sorted(compute_items, key=lambda x: -x[1])[:10]:
-            summary_lines.append(f"  {name:<50s} {us/1000:>8.1f} ms  (x{count})")
-
-        overlap_ratio = nccl_total_us / compute_total_us if compute_total_us > 0 else 0
-        summary_lines.append(f"\nNCCL / Compute ratio: {overlap_ratio:.2f}")
-        if overlap_ratio < 1.0:
-            summary_lines.append("=> Communication < Compute: all-gathers can be fully hidden behind compute.")
-        else:
-            summary_lines.append("=> Communication > Compute: all-gathers are on the critical path.")
-
-        summary_text = "\n".join(summary_lines)
-        print(summary_text)
-
-        with open(f"{TRACE_DIR}/summary.txt", "w") as f:
-            f.write(summary_text)
+    if rank == 0:
+        print("[fsdp_profile] stopped CUDA profiler capture")
+        print(fsdp_model.wait_profile_summary())
 
     dist.barrier()
     dist.destroy_process_group()
 
 
-def _run():
+def _run_worker_profile():
     import torch.multiprocessing as mp
+
     mp.spawn(_worker, args=(WORLD_SIZE,), nprocs=WORLD_SIZE, join=True)
 
-    trace_path = f"{TRACE_DIR}/fsdp_rank0.json"
-    with open(trace_path, "rb") as f:
-        trace_bytes = f.read()
-    with open(f"{TRACE_DIR}/summary.txt") as f:
-        summary = f.read()
-    return trace_bytes, summary
+
+def _run_nsys_profile():
+    os.makedirs(PROFILE_DIR, exist_ok=True)
+    nsys = shutil.which("nsys")
+    if nsys is None:
+        raise RuntimeError(
+            "Nsight Systems CLI (`nsys`) was not found in the Modal image. "
+            "Install Nsight Systems or use a CUDA image that includes nsys."
+        )
+
+    env = os.environ.copy()
+    env["PYTHONPATH"] = "/root" + os.pathsep + env.get("PYTHONPATH", "")
+    env["FSDP_PROFILE_WAITS"] = "1"
+
+    cmd = [
+        nsys,
+        "profile",
+        "--force-overwrite=true",
+        "--capture-range=cudaProfilerApi",
+        "--capture-range-end=stop",
+        "--cuda-memory-usage=true",
+        "--sample=none",
+        "--trace=cuda,nvtx,osrt,cublas,cudnn",
+        f"--output={NSYS_OUTPUT_BASE}",
+        sys.executable,
+        "-m",
+        "cs336_systems.fsdp_profile",
+        "--worker-profile",
+    ]
+
+    completed = subprocess.run(
+        cmd,
+        cwd="/root",
+        env=env,
+        text=True,
+        capture_output=True,
+    )
+    profile_log = (
+        "$ " + " ".join(cmd) + "\n\n"
+        "=== STDOUT ===\n" + completed.stdout + "\n"
+        "=== STDERR ===\n" + completed.stderr
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(profile_log)
+
+    stats_completed = subprocess.run(
+        [nsys, "stats", NSYS_REPORT_PATH],
+        cwd="/root",
+        env=env,
+        text=True,
+        capture_output=True,
+    )
+    stats_log = (
+        "$ nsys stats " + NSYS_REPORT_PATH + "\n\n"
+        "=== STDOUT ===\n" + stats_completed.stdout + "\n"
+        "=== STDERR ===\n" + stats_completed.stderr
+    )
+
+    with open(NSYS_REPORT_PATH, "rb") as f:
+        report_bytes = f.read()
+
+    return report_bytes, profile_log, stats_log
 
 
 image = (
-    modal.Image.debian_slim(python_version="3.12")
-    .pip_install("torch", "numpy", "einx", "einops", "jaxtyping")
+    # The slim Modal image has CUDA at runtime but does not include Nsight
+    # Systems. NVIDIA's PyTorch image includes the CUDA toolkit, PyTorch, NCCL,
+    # and the ``nsys`` CLI needed by the subprocess profiler wrapper above.
+    modal.Image.from_registry("nvcr.io/nvidia/pytorch:24.12-py3")
+    .pip_install("einx", "einops", "jaxtyping")
     .run_commands(
-        "mkdir -p /usr/local/lib/python3.12/site-packages/cs336_systems-0.0.0.dist-info"
-        " && echo 'Metadata-Version: 2.1\\nName: cs336-systems\\nVersion: 0.0.0'"
-        " > /usr/local/lib/python3.12/site-packages/cs336_systems-0.0.0.dist-info/METADATA"
+        "mkdir -p"
+        " /usr/local/lib/python3.12/site-packages/cs336_systems-0.0.0.dist-info"
+        " /usr/local/lib/python3.12/dist-packages/cs336_systems-0.0.0.dist-info"
+        " && printf 'Metadata-Version: 2.1\\nName: cs336-systems\\nVersion: 0.0.0\\n'"
+        " | tee"
+        " /usr/local/lib/python3.12/site-packages/cs336_systems-0.0.0.dist-info/METADATA"
+        " /usr/local/lib/python3.12/dist-packages/cs336_systems-0.0.0.dist-info/METADATA"
+        " >/dev/null"
     )
     .add_local_dir("cs336-basics/cs336_basics", remote_path="/root/cs336_basics")
     .add_local_dir("cs336_systems", remote_path="/root/cs336_systems")
@@ -168,10 +220,14 @@ image = (
 
 @app.function(image=image, gpu="A100-80GB:2", timeout=900)
 def run_remote():
-    trace_bytes, summary = _run()
+    output = subprocess.check_output(["nvidia-smi"], text=True)
+    print(output)
+
+    report_bytes, profile_log, stats_log = _run_nsys_profile()
     return {
-        "trace_b64": base64.b64encode(trace_bytes).decode("ascii"),
-        "summary": summary,
+        "report_b64": base64.b64encode(report_bytes).decode("ascii"),
+        "profile_log": profile_log,
+        "stats_log": stats_log,
     }
 
 
@@ -180,13 +236,33 @@ def modal_main():
     print(f"FSDP Profile: XL model, {WORLD_SIZE} GPUs ...")
     result = run_remote.remote()
 
-    trace_bytes = base64.b64decode(result["trace_b64"])
-    summary = result["summary"]
+    report_bytes = base64.b64decode(result["report_b64"])
 
     os.makedirs("benchmark_results", exist_ok=True)
-    path = "benchmark_results/fsdp_trace.json"
-    with open(path, "wb") as f:
-        f.write(trace_bytes)
-    print(f"\nTrace saved to {path} ({len(trace_bytes) / 1e6:.1f} MB)")
-    print("Open in https://ui.perfetto.dev to view\n")
-    print(summary)
+    report_path = "benchmark_results/fsdp_profile.nsys-rep"
+    log_path = "benchmark_results/fsdp_profile_nsys.log"
+    stats_path = "benchmark_results/fsdp_profile_nsys_stats.txt"
+
+    with open(report_path, "wb") as f:
+        f.write(report_bytes)
+    with open(log_path, "w") as f:
+        f.write(result["profile_log"])
+    with open(stats_path, "w") as f:
+        f.write(result["stats_log"])
+
+    print(f"\nNsight report saved to {report_path} ({len(report_bytes) / 1e6:.1f} MB)")
+    print(f"Nsight profile log saved to {log_path}")
+    print(f"Nsight stats saved to {stats_path}\n")
+    print(result["stats_log"])
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--worker-profile",
+        action="store_true",
+        help="Run the inner multiprocessing training job. Intended to be launched by nsys.",
+    )
+    args = parser.parse_args()
+    if args.worker_profile:
+        _run_worker_profile()

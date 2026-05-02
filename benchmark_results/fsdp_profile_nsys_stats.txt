@@ -1,0 +1,1094 @@
+$ nsys stats /tmp/fsdp_nsys/fsdp_profile.nsys-rep
+
+=== STDOUT ===
+Generating SQLite file /tmp/fsdp_nsys/fsdp_profile.sqlite from /tmp/fsdp_nsys/fsdp_profile.nsys-rep
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/nvtx_sum.py]... 
+
+ ** NVTX Range Summary (nvtx_sum):
+
+ Time (%)  Total Time (ns)  Instances   Avg (ns)     Med (ns)    Min (ns)   Max (ns)   StdDev (ns)   Style                Range              
+ --------  ---------------  ---------  -----------  -----------  ---------  ---------  -----------  -------  --------------------------------
+     25.8        785647997          2  392823998.5  392823998.5  389551453  396096544    4628078.2  PushPop  :backward                       
+     23.2        706468539          1  706468539.0  706468539.0  706468539  706468539          0.0  PushPop  :rank_1_profiled_train_step     
+     22.1        674280023          1  674280023.0  674280023.0  674280023  674280023          0.0  PushPop  :rank_0_profiled_train_step     
+     17.1        522964068          2  261482034.0  261482034.0  251809258  271154810   13679371.0  PushPop  :forward                        
+      1.4         41852459        904      46297.0      43011.5      39469     241654      12308.5  PushPop  NCCL:ncclAllGather              
+      0.9         26912019          2   13456009.5   13456009.5   11997978   14914041    2061967.9  PushPop  :optimizer_step                 
+      0.9         26416980          2   13208490.0   13208490.0   11624703   14792277    2239813.1  PushPop  :finish_gradient_synchronization
+      0.6         17392050        452      38478.0      35606.0      33869     100158       7868.5  PushPop  NCCL:ncclReduceScatter          
+      0.2          5469956          2    2734978.0    2734978.0    2656240    2813716     111352.3  PushPop  :zero_grad                      
+      0.1          4238910        132      32113.0      30250.0      24466     105408      10728.3  PushPop  NCCL:ncclAllReduce              
+      0.0          1297226          2     648613.0     648613.0     208332    1088894     622651.4  PushPop  :fsdp_prefetch_bwd_layer_119    
+      0.0          1195640          2     597820.0     597820.0     238845     956795     507667.3  PushPop  :fsdp_prefetch_fwd_layer_27     
+      0.0          1147629          2     573814.5     573814.5     536906     610723      52196.5  PushPop  :fsdp_prefetch_fwd_layer_0      
+      0.0          1025095          2     512547.5     512547.5     217016     808079     417944.7  PushPop  :fsdp_prefetch_fwd_layer_114    
+      0.0          1014951          2     507475.5     507475.5     241134     773817     376663.8  PushPop  :fsdp_prefetch_fwd_layer_101    
+      0.0          1009371          2     504685.5     504685.5     236588     772783     379147.1  PushPop  :fsdp_prefetch_fwd_layer_196    
+      0.0           954524          2     477262.0     477262.0      60748     893776     589039.7  PushPop  CCCL:cub::DeviceRadixSort       
+      0.0           821134          2     410567.0     410567.0     214402     606732     277419.2  PushPop  :fsdp_prefetch_bwd_layer_12     
+      0.0           802534          2     401267.0     401267.0     381747     420787      27605.4  PushPop  :loss                           
+      0.0           680307          2     340153.5     340153.5     240605     439702     140782.8  PushPop  :fsdp_prefetch_fwd_layer_165    
+      0.0           632758          2     316379.0     316379.0     249467     383291      94627.9  PushPop  :fsdp_prefetch_fwd_layer_125    
+      0.0           613962          2     306981.0     306981.0     235166     378796     101561.7  PushPop  :fsdp_prefetch_fwd_layer_192    
+      0.0           595835          2     297917.5     297917.5     222320     373515     106911.0  PushPop  :fsdp_prefetch_bwd_layer_177    
+      0.0           594728          2     297364.0     297364.0     243476     351252      76209.1  PushPop  :fsdp_prefetch_fwd_layer_9      
+      0.0           586906          2     293453.0     293453.0     221691     365215     101486.8  PushPop  :fsdp_prefetch_fwd_layer_129    
+      0.0           577658          2     288829.0     288829.0     212850     364808     107450.5  PushPop  :fsdp_prefetch_fwd_layer_118    
+      0.0           574645          2     287322.5     287322.5     238481     336164      69072.3  PushPop  :fsdp_prefetch_fwd_layer_147    
+      0.0           565884          2     282942.0     282942.0     228119     337765      77531.4  PushPop  :fsdp_prefetch_fwd_layer_126    
+      0.0           546683          2     273341.5     273341.5     241835     304848      44556.9  PushPop  :fsdp_prefetch_bwd_layer_45     
+      0.0           545889          2     272944.5     272944.5     246048     299841      38037.4  PushPop  :fsdp_prefetch_bwd_layer_224    
+      0.0           541005          2     270502.5     270502.5     260986     280019      13458.4  PushPop  :fsdp_prefetch_fwd_layer_1      
+      0.0           539544          2     269772.0     269772.0     265354     274190       6248.0  PushPop  :fsdp_prefetch_fwd_layer_120    
+      0.0           539410          2     269705.0     269705.0     249893     289517      28018.4  PushPop  :fsdp_prefetch_fwd_layer_141    
+      0.0           535517          2     267758.5     267758.5     241181     294336      37586.3  PushPop  :fsdp_prefetch_fwd_layer_121    
+      0.0           532187          2     266093.5     266093.5     248856     283331      24377.5  PushPop  :fsdp_prefetch_fwd_layer_137    
+      0.0           525748          2     262874.0     262874.0     217445     308303      64246.3  PushPop  :fsdp_prefetch_fwd_layer_130    
+      0.0           523835          2     261917.5     261917.5     251107     272728      15288.4  PushPop  :fsdp_prefetch_fwd_layer_91     
+      0.0           523444          2     261722.0     261722.0     241529     281915      28557.2  PushPop  :fsdp_prefetch_fwd_layer_166    
+      0.0           518797          2     259398.5     259398.5     230907     287890      40293.1  PushPop  :fsdp_prefetch_bwd_layer_187    
+      0.0           517105          2     258552.5     258552.5     257123     259982       2021.6  PushPop  :fsdp_prefetch_fwd_layer_124    
+      0.0           516406          2     258203.0     258203.0     233277     283129      35250.7  PushPop  :fsdp_prefetch_fwd_layer_132    
+      0.0           516198          2     258099.0     258099.0     239135     277063      26819.1  PushPop  :fsdp_prefetch_fwd_layer_89     
+      0.0           515573          2     257786.5     257786.5     230312     285261      38854.8  PushPop  :fsdp_prefetch_fwd_layer_128    
+      0.0           514331          2     257165.5     257165.5     232323     282008      35132.6  PushPop  :fsdp_prefetch_fwd_layer_2      
+      0.0           513756          2     256878.0     256878.0     242358     271398      20534.4  PushPop  :fsdp_prefetch_fwd_layer_110    
+      0.0           511618          2     255809.0     255809.0     252120     259498       5217.0  PushPop  :fsdp_prefetch_fwd_layer_69     
+      0.0           511058          2     255529.0     255529.0     221699     289359      47842.8  PushPop  :fsdp_prefetch_fwd_layer_134    
+      0.0           509334          2     254667.0     254667.0     237000     272334      24984.9  PushPop  :fsdp_prefetch_bwd_layer_16     
+      0.0           506925          2     253462.5     253462.5     218109     288816      49997.4  PushPop  :fsdp_prefetch_fwd_layer_187    
+      0.0           504483          2     252241.5     252241.5     225458     279025      37877.6  PushPop  :fsdp_prefetch_fwd_layer_123    
+      0.0           503799          2     251899.5     251899.5     215210     288589      51886.8  PushPop  :fsdp_prefetch_fwd_layer_133    
+      0.0           503727          2     251863.5     251863.5     235698     268029      22861.5  PushPop  :fsdp_prefetch_fwd_layer_70     
+      0.0           503516          2     251758.0     251758.0     244961     258555       9612.4  PushPop  :fsdp_prefetch_fwd_layer_148    
+      0.0           501565          2     250782.5     250782.5     216086     285479      49068.3  PushPop  :fsdp_prefetch_fwd_layer_140    
+      0.0           501263          2     250631.5     250631.5     235656     265607      21178.6  PushPop  :fsdp_prefetch_fwd_layer_143    
+      0.0           501107          2     250553.5     250553.5     243159     257948      10457.4  PushPop  :fsdp_prefetch_fwd_layer_93     
+      0.0           501002          2     250501.0     250501.0     249930     251072        807.5  PushPop  :fsdp_prefetch_fwd_layer_194    
+      0.0           500105          2     250052.5     250052.5     242445     257660      10758.6  PushPop  :fsdp_prefetch_bwd_layer_23     
+      0.0           499922          2     249961.0     249961.0     249443     250479        732.6  PushPop  :fsdp_prefetch_fwd_layer_225    
+      0.0           499899          2     249949.5     249949.5     240975     258924      12691.9  PushPop  :fsdp_prefetch_fwd_layer_26     
+      0.0           499812          2     249906.0     249906.0     238043     261769      16776.8  PushPop  :fsdp_prefetch_fwd_layer_142    
+      0.0           498843          2     249421.5     249421.5     222171     276672      38538.0  PushPop  :fsdp_prefetch_fwd_layer_94     
+      0.0           497423          2     248711.5     248711.5     230469     266954      25798.8  PushPop  :fsdp_prefetch_fwd_layer_127    
+      0.0           497399          2     248699.5     248699.5     240771     256628      11212.6  PushPop  :fsdp_prefetch_fwd_layer_77     
+      0.0           496968          2     248484.0     248484.0     233243     263725      21554.0  PushPop  :fsdp_prefetch_fwd_layer_106    
+      0.0           496966          2     248483.0     248483.0     231808     265158      23582.0  PushPop  :fsdp_prefetch_fwd_layer_146    
+      0.0           495999          2     247999.5     247999.5     230105     265894      25306.6  PushPop  :fsdp_prefetch_bwd_layer_144    
+      0.0           495550          2     247775.0     247775.0     234543     261007      18712.9  PushPop  :fsdp_prefetch_bwd_layer_33     
+      0.0           494556          2     247278.0     247278.0     231776     262780      21923.1  PushPop  :fsdp_prefetch_bwd_layer_150    
+      0.0           493610          2     246805.0     246805.0     242675     250935       5840.7  PushPop  :fsdp_prefetch_fwd_layer_39     
+      0.0           493398          2     246699.0     246699.0     242009     251389       6632.7  PushPop  :fsdp_prefetch_fwd_layer_6      
+      0.0           493398          2     246699.0     246699.0     225408     267990      30110.0  PushPop  :fsdp_prefetch_fwd_layer_75     
+      0.0           493038          2     246519.0     246519.0     217922     275116      40442.3  PushPop  :fsdp_prefetch_bwd_layer_223    
+      0.0           492928          2     246464.0     246464.0     223208     269720      32889.0  PushPop  :fsdp_prefetch_fwd_layer_113    
+      0.0           492879          2     246439.5     246439.5     237573     255306      12539.1  PushPop  :fsdp_prefetch_fwd_layer_104    
+      0.0           492821          2     246410.5     246410.5     241392     251429       7097.2  PushPop  :fsdp_prefetch_bwd_layer_141    
+      0.0           492783          2     246391.5     246391.5     238719     254064      10850.6  PushPop  :fsdp_prefetch_bwd_layer_99     
+      0.0           491953          2     245976.5     245976.5     245260     246693       1013.3  PushPop  :fsdp_prefetch_fwd_layer_210    
+      0.0           491862          2     245931.0     245931.0     236319     255543      13593.4  PushPop  :fsdp_prefetch_fwd_layer_7      
+      0.0           491641          2     245820.5     245820.5     241866     249775       5592.5  PushPop  :fsdp_prefetch_fwd_layer_24     
+      0.0           491195          2     245597.5     245597.5     241198     249997       6221.8  PushPop  :fsdp_prefetch_fwd_layer_87     
+      0.0           490822          2     245411.0     245411.0     219949     270873      36008.7  PushPop  :fsdp_prefetch_fwd_layer_84     
+      0.0           490620          2     245310.0     245310.0     237078     253542      11641.8  PushPop  :fsdp_prefetch_fwd_layer_96     
+      0.0           490516          2     245258.0     245258.0     245060     245456        280.0  PushPop  :fsdp_prefetch_bwd_layer_185    
+      0.0           490142          2     245071.0     245071.0     238506     251636       9284.3  PushPop  :fsdp_prefetch_fwd_layer_105    
+      0.0           489627          2     244813.5     244813.5     237523     252104      10310.3  PushPop  :fsdp_prefetch_bwd_layer_41     
+      0.0           489588          2     244794.0     244794.0     224995     264593      28000.0  PushPop  :fsdp_prefetch_bwd_layer_17     
+      0.0           489183          2     244591.5     244591.5     240008     249175       6482.0  PushPop  :fsdp_prefetch_fwd_layer_45     
+      0.0           489054          2     244527.0     244527.0     244182     244872        487.9  PushPop  :fsdp_prefetch_fwd_layer_161    
+      0.0           488908          2     244454.0     244454.0     241165     247743       4651.3  PushPop  :fsdp_prefetch_fwd_layer_107    
+      0.0           488452          2     244226.0     244226.0     218381     270071      36550.3  PushPop  :fsdp_prefetch_fwd_layer_131    
+      0.0           488120          2     244060.0     244060.0     239675     248445       6201.3  PushPop  :fsdp_prefetch_fwd_layer_149    
+      0.0           488046          2     244023.0     244023.0     230343     257703      19346.4  PushPop  :fsdp_prefetch_fwd_layer_10     
+      0.0           487683          2     243841.5     243841.5     241648     246035       3102.1  PushPop  :fsdp_prefetch_bwd_layer_167    
+      0.0           487158          2     243579.0     243579.0     219722     267436      33738.9  PushPop  :fsdp_prefetch_fwd_layer_145    
+      0.0           486206          2     243103.0     243103.0     234134     252072      12684.1  PushPop  :fsdp_prefetch_fwd_layer_72     
+      0.0           486199          2     243099.5     243099.5     225759     260440      24523.2  PushPop  :fsdp_prefetch_bwd_layer_184    
+      0.0           485773          2     242886.5     242886.5     228262     257511      20682.2  PushPop  :fsdp_prefetch_fwd_layer_81     
+      0.0           485376          2     242688.0     242688.0     231840     253536      15341.4  PushPop  :fsdp_prefetch_fwd_layer_13     
+      0.0           485256          2     242628.0     242628.0     238573     246683       5734.6  PushPop  :fsdp_prefetch_fwd_layer_48     
+      0.0           484980          2     242490.0     242490.0     223150     261830      27350.9  PushPop  :fsdp_prefetch_fwd_layer_117    
+      0.0           484572          2     242286.0     242286.0     214954     269618      38653.3  PushPop  :fsdp_prefetch_bwd_layer_106    
+      0.0           484218          2     242109.0     242109.0     230359     253859      16617.0  PushPop  :fsdp_prefetch_fwd_layer_92     
+      0.0           484020          2     242010.0     242010.0     216372     267648      36257.6  PushPop  :fsdp_prefetch_fwd_layer_144    
+      0.0           483759          2     241879.5     241879.5     239762     243997       2994.6  PushPop  :fsdp_prefetch_fwd_layer_208    
+      0.0           483254          2     241627.0     241627.0     216810     266444      35096.5  PushPop  :fsdp_prefetch_fwd_layer_135    
+      0.0           483024          2     241512.0     241512.0     234934     248090       9302.7  PushPop  :fsdp_prefetch_fwd_layer_5      
+      0.0           483020          2     241510.0     241510.0     226869     256151      20705.5  PushPop  :fsdp_prefetch_fwd_layer_122    
+      0.0           483014          2     241507.0     241507.0     227793     255221      19394.5  PushPop  :fsdp_prefetch_bwd_layer_131    
+      0.0           482824          2     241412.0     241412.0     241070     241754        483.7  PushPop  :fsdp_prefetch_fwd_layer_47     
+      0.0           482665          2     241332.5     241332.5     240280     242385       1488.5  PushPop  :fsdp_prefetch_fwd_layer_68     
+      0.0           482487          2     241243.5     241243.5     237262     245225       5630.7  PushPop  :fsdp_prefetch_fwd_layer_64     
+      0.0           482163          2     241081.5     241081.5     240232     241931       1201.4  PushPop  :fsdp_prefetch_bwd_layer_176    
+      0.0           482102          2     241051.0     241051.0     227679     254423      18910.9  PushPop  :fsdp_prefetch_fwd_layer_153    
+      0.0           481777          2     240888.5     240888.5     237288     244489       5091.9  PushPop  :fsdp_prefetch_fwd_layer_60     
+      0.0           481292          2     240646.0     240646.0     229082     252210      16354.0  PushPop  :fsdp_prefetch_bwd_layer_100    
+      0.0           480968          2     240484.0     240484.0     238041     242927       3454.9  PushPop  :fsdp_prefetch_fwd_layer_173    
+      0.0           480596          2     240298.0     240298.0     236824     243772       4913.0  PushPop  :fsdp_prefetch_bwd_layer_61     
+      0.0           480408          2     240204.0     240204.0     236636     243772       5045.9  PushPop  :fsdp_prefetch_fwd_layer_50     
+      0.0           480355          2     240177.5     240177.5     207757     272598      45849.5  PushPop  :fsdp_prefetch_bwd_layer_148    
+      0.0           480218          2     240109.0     240109.0     236435     243783       5195.8  PushPop  :fsdp_prefetch_fwd_layer_22     
+      0.0           480200          2     240100.0     240100.0     226337     253863      19463.8  PushPop  :fsdp_prefetch_bwd_layer_163    
+      0.0           480000          2     240000.0     240000.0     216078     263922      33830.8  PushPop  :fsdp_prefetch_fwd_layer_119    
+      0.0           479573          2     239786.5     239786.5     212806     266767      38156.2  PushPop  :fsdp_prefetch_fwd_layer_99     
+      0.0           479131          2     239565.5     239565.5     214826     264305      34986.9  PushPop  :fsdp_prefetch_fwd_layer_73     
+      0.0           478772          2     239386.0     239386.0     230251     248521      12918.8  PushPop  :fsdp_prefetch_bwd_layer_118    
+      0.0           478688          2     239344.0     239344.0     234519     244169       6823.6  PushPop  :fsdp_prefetch_bwd_layer_72     
+      0.0           477377          2     238688.5     238688.5     212610     264767      36880.6  PushPop  :fsdp_prefetch_bwd_layer_142    
+      0.0           477312          2     238656.0     238656.0     225471     251841      18646.4  PushPop  :fsdp_prefetch_fwd_layer_136    
+      0.0           477243          2     238621.5     238621.5     237189     240054       2025.9  PushPop  :fsdp_prefetch_bwd_layer_169    
+      0.0           477018          2     238509.0     238509.0     224467     252551      19858.4  PushPop  :fsdp_prefetch_fwd_layer_168    
+      0.0           476712          2     238356.0     238356.0     230692     246020      10838.5  PushPop  :fsdp_prefetch_bwd_layer_139    
+      0.0           476445          2     238222.5     238222.5     236128     240317       2962.1  PushPop  :fsdp_prefetch_fwd_layer_215    
+      0.0           476226          2     238113.0     238113.0     230226     246000      11153.9  PushPop  :fsdp_prefetch_bwd_layer_173    
+      0.0           476157          2     238078.5     238078.5     236995     239162       1532.3  PushPop  :fsdp_prefetch_fwd_layer_221    
+      0.0           476069          2     238034.5     238034.5     236480     239589       2198.4  PushPop  :fsdp_prefetch_bwd_layer_37     
+      0.0           475823          2     237911.5     237911.5     236601     239222       1853.3  PushPop  :fsdp_prefetch_fwd_layer_206    
+      0.0           475691          2     237845.5     237845.5     237587     238104        365.6  PushPop  :fsdp_prefetch_fwd_layer_34     
+      0.0           475462          2     237731.0     237731.0     234189     241273       5009.1  PushPop  :fsdp_prefetch_fwd_layer_88     
+      0.0           474923          2     237461.5     237461.5     226385     248538      15664.5  PushPop  :fsdp_prefetch_bwd_layer_186    
+      0.0           474651          2     237325.5     237325.5     231138     243513       8750.4  PushPop  :fsdp_prefetch_bwd_layer_35     
+      0.0           474492          2     237246.0     237246.0     230576     243916       9432.8  PushPop  :fsdp_prefetch_fwd_layer_217    
+      0.0           474333          2     237166.5     237166.5     224155     250178      18401.0  PushPop  :fsdp_prefetch_fwd_layer_74     
+      0.0           474213          2     237106.5     237106.5     228582     245631      12055.5  PushPop  :fsdp_prefetch_fwd_layer_155    
+      0.0           473798          2     236899.0     236899.0     236457     237341        625.1  PushPop  :fsdp_prefetch_fwd_layer_49     
+      0.0           473762          2     236881.0     236881.0     224572     249190      17407.6  PushPop  :fsdp_prefetch_fwd_layer_115    
+      0.0           473699          2     236849.5     236849.5     232570     241129       6052.1  PushPop  :fsdp_prefetch_fwd_layer_30     
+      0.0           473615          2     236807.5     236807.5     216865     256750      28203.0  PushPop  :fsdp_prefetch_fwd_layer_33     
+      0.0           473555          2     236777.5     236777.5     229805     243750       9860.6  PushPop  :fsdp_prefetch_fwd_layer_111    
+      0.0           473288          2     236644.0     236644.0     232253     241035       6209.8  PushPop  :fsdp_prefetch_bwd_layer_180    
+      0.0           473240          2     236620.0     236620.0     216194     257046      28886.7  PushPop  :fsdp_prefetch_fwd_layer_138    
+      0.0           472398          2     236199.0     236199.0     220187     252211      22644.4  PushPop  :fsdp_prefetch_bwd_layer_34     
+      0.0           472282          2     236141.0     236141.0     233301     238981       4016.4  PushPop  :fsdp_prefetch_bwd_layer_24     
+      0.0           471610          2     235805.0     235805.0     235431     236179        528.9  PushPop  :fsdp_prefetch_bwd_layer_97     
+      0.0           471599          2     235799.5     235799.5     235067     236532       1035.9  PushPop  :fsdp_prefetch_bwd_layer_123    
+      0.0           471531          2     235765.5     235765.5     217751     253780      25476.4  PushPop  :fsdp_prefetch_fwd_layer_82     
+      0.0           470707          2     235353.5     235353.5     224454     246253      15414.2  PushPop  :fsdp_prefetch_fwd_layer_195    
+      0.0           470694          2     235347.0     235347.0     227858     242836      10591.0  PushPop  :fsdp_prefetch_bwd_layer_174    
+      0.0           470341          2     235170.5     235170.5     229204     241137       8437.9  PushPop  :fsdp_prefetch_bwd_layer_63     
+      0.0           470136          2     235068.0     235068.0     225898     244238      12968.3  PushPop  :fsdp_prefetch_bwd_layer_103    
+      0.0           470032          2     235016.0     235016.0     229863     240169       7287.4  PushPop  :fsdp_prefetch_fwd_layer_116    
+      0.0           469835          2     234917.5     234917.5     213329     256506      30530.7  PushPop  :fsdp_prefetch_fwd_layer_85     
+      0.0           469756          2     234878.0     234878.0     230225     239531       6580.3  PushPop  :fsdp_prefetch_fwd_layer_54     
+      0.0           469162          2     234581.0     234581.0     224609     244553      14102.5  PushPop  :fsdp_prefetch_fwd_layer_103    
+      0.0           469021          2     234510.5     234510.5     227333     241688      10150.5  PushPop  :fsdp_prefetch_fwd_layer_169    
+      0.0           469017          2     234508.5     234508.5     226510     242507      11311.6  PushPop  :fsdp_prefetch_bwd_layer_191    
+      0.0           468827          2     234413.5     234413.5     232854     235973       2205.5  PushPop  :fsdp_prefetch_bwd_layer_225    
+      0.0           468722          2     234361.0     234361.0     233210     235512       1627.8  PushPop  :fsdp_prefetch_bwd_layer_149    
+      0.0           468681          2     234340.5     234340.5     232635     236046       2411.9  PushPop  :fsdp_prefetch_bwd_layer_104    
+      0.0           468471          2     234235.5     234235.5     217855     250616      23165.5  PushPop  :fsdp_prefetch_bwd_layer_175    
+      0.0           468045          2     234022.5     234022.5     211064     256981      32468.2  PushPop  :fsdp_prefetch_bwd_layer_79     
+      0.0           467893          2     233946.5     233946.5     218792     249101      21431.7  PushPop  :fsdp_prefetch_fwd_layer_3      
+      0.0           467857          2     233928.5     233928.5     226327     241530      10750.1  PushPop  :fsdp_prefetch_fwd_layer_180    
+      0.0           467814          2     233907.0     233907.0     210791     257023      32691.0  PushPop  :fsdp_prefetch_fwd_layer_139    
+      0.0           467705          2     233852.5     233852.5     216621     251084      24369.0  PushPop  :fsdp_prefetch_fwd_layer_163    
+      0.0           467696          2     233848.0     233848.0     226681     241015      10135.7  PushPop  :fsdp_prefetch_fwd_layer_71     
+      0.0           466870          2     233435.0     233435.0     214473     252397      26816.3  PushPop  :fsdp_prefetch_bwd_layer_203    
+      0.0           466728          2     233364.0     233364.0     229211     237517       5873.2  PushPop  :fsdp_prefetch_fwd_layer_67     
+      0.0           466067          2     233033.5     233033.5     226724     239343       8923.0  PushPop  :fsdp_prefetch_fwd_layer_8      
+      0.0           466066          2     233033.0     233033.0     228753     237313       6052.8  PushPop  :fsdp_prefetch_fwd_layer_174    
+      0.0           466054          2     233027.0     233027.0     222433     243621      14982.2  PushPop  :fsdp_prefetch_bwd_layer_159    
+      0.0           465919          2     232959.5     232959.5     220166     245753      18092.7  PushPop  :fsdp_prefetch_fwd_layer_90     
+      0.0           465878          2     232939.0     232939.0     231615     234263       1872.4  PushPop  :fsdp_prefetch_bwd_layer_178    
+      0.0           465604          2     232802.0     232802.0     232638     232966        231.9  PushPop  :fsdp_prefetch_fwd_layer_100    
+      0.0           465539          2     232769.5     232769.5     228227     237312       6424.1  PushPop  :fsdp_prefetch_bwd_layer_212    
+      0.0           465398          2     232699.0     232699.0     231026     234372       2366.0  PushPop  :fsdp_prefetch_fwd_layer_55     
+      0.0           465316          2     232658.0     232658.0     229791     235525       4054.6  PushPop  :fsdp_prefetch_bwd_layer_44     
+      0.0           465314          2     232657.0     232657.0     230591     234723       2921.8  PushPop  :fsdp_prefetch_bwd_layer_76     
+      0.0           465095          2     232547.5     232547.5     214377     250718      25697.0  PushPop  :fsdp_prefetch_fwd_layer_108    
+      0.0           464992          2     232496.0     232496.0     224864     240128      10793.3  PushPop  :fsdp_prefetch_fwd_layer_23     
+      0.0           464573          2     232286.5     232286.5     224649     239924      10801.1  PushPop  :fsdp_prefetch_bwd_layer_161    
+      0.0           464491          2     232245.5     232245.5     222671     241820      13540.4  PushPop  :fsdp_prefetch_bwd_layer_135    
+      0.0           464462          2     232231.0     232231.0     224737     239725      10598.1  PushPop  :fsdp_prefetch_fwd_layer_52     
+      0.0           464065          2     232032.5     232032.5     229353     234712       3789.4  PushPop  :fsdp_prefetch_fwd_layer_46     
+      0.0           464034          2     232017.0     232017.0     231411     232623        857.0  PushPop  :fsdp_prefetch_bwd_layer_143    
+      0.0           463849          2     231924.5     231924.5     220931     242918      15547.2  PushPop  :fsdp_prefetch_fwd_layer_112    
+      0.0           463601          2     231800.5     231800.5     215459     248142      23110.4  PushPop  :fsdp_prefetch_bwd_layer_101    
+      0.0           463516          2     231758.0     231758.0     217890     245626      19612.3  PushPop  :fsdp_prefetch_fwd_layer_66     
+      0.0           463412          2     231706.0     231706.0     230839     232573       1226.1  PushPop  :fsdp_prefetch_bwd_layer_170    
+      0.0           463288          2     231644.0     231644.0     224464     238824      10154.1  PushPop  :fsdp_prefetch_fwd_layer_164    
+      0.0           463230          2     231615.0     231615.0     214180     249050      24656.8  PushPop  :fsdp_prefetch_fwd_layer_83     
+      0.0           463082          2     231541.0     231541.0     225670     237412       8302.8  PushPop  :fsdp_prefetch_bwd_layer_137    
+      0.0           463043          2     231521.5     231521.5     225383     237660       8681.1  PushPop  :fsdp_prefetch_fwd_layer_184    
+      0.0           462975          2     231487.5     231487.5     229761     233214       2441.6  PushPop  :fsdp_prefetch_bwd_layer_120    
+      0.0           462660          2     231330.0     231330.0     217829     244831      19093.3  PushPop  :fsdp_prefetch_fwd_layer_98     
+      0.0           462516          2     231258.0     231258.0     228209     234307       4311.9  PushPop  :fsdp_prefetch_fwd_layer_156    
+      0.0           462182          2     231091.0     231091.0     229224     232958       2640.3  PushPop  :fsdp_prefetch_bwd_layer_162    
+      0.0           462144          2     231072.0     231072.0     230922     231222        212.1  PushPop  :fsdp_prefetch_fwd_layer_29     
+      0.0           461806          2     230903.0     230903.0     217111     244695      19504.8  PushPop  :fsdp_prefetch_fwd_layer_167    
+      0.0           461794          2     230897.0     230897.0     227115     234679       5348.6  PushPop  :fsdp_prefetch_bwd_layer_10     
+      0.0           461507          2     230753.5     230753.5     212649     248858      25603.6  PushPop  :fsdp_prefetch_fwd_layer_159    
+      0.0           461505          2     230752.5     230752.5     208748     252757      31119.1  PushPop  :fsdp_prefetch_bwd_layer_115    
+      0.0           461455          2     230727.5     230727.5     229988     231467       1045.8  PushPop  :fsdp_prefetch_bwd_layer_107    
+      0.0           461434          2     230717.0     230717.0     229154     232280       2210.4  PushPop  :fsdp_prefetch_bwd_layer_206    
+      0.0           461238          2     230619.0     230619.0     222154     239084      11971.3  PushPop  :fsdp_prefetch_fwd_layer_209    
+      0.0           461217          2     230608.5     230608.5     220767     240450      13918.0  PushPop  :fsdp_prefetch_bwd_layer_52     
+      0.0           460866          2     230433.0     230433.0     211301     249565      27056.7  PushPop  :fsdp_prefetch_fwd_layer_78     
+      0.0           460644          2     230322.0     230322.0     220627     240017      13710.8  PushPop  :fsdp_prefetch_bwd_layer_31     
+      0.0           460591          2     230295.5     230295.5     223784     236807       9208.7  PushPop  :fsdp_prefetch_fwd_layer_211    
+      0.0           460565          2     230282.5     230282.5     228902     231663       1952.3  PushPop  :fsdp_prefetch_fwd_layer_79     
+      0.0           460472          2     230236.0     230236.0     224297     236175       8399.0  PushPop  :fsdp_prefetch_bwd_layer_122    
+      0.0           460386          2     230193.0     230193.0     226797     233589       4802.7  PushPop  :fsdp_prefetch_fwd_layer_189    
+      0.0           459745          2     229872.5     229872.5     211971     247774      25316.5  PushPop  :fsdp_prefetch_bwd_layer_114    
+      0.0           459665          2     229832.5     229832.5     227257     232408       3642.3  PushPop  :fsdp_prefetch_bwd_layer_80     
+      0.0           459638          2     229819.0     229819.0     220469     239169      13222.9  PushPop  :fsdp_prefetch_bwd_layer_136    
+      0.0           459618          2     229809.0     229809.0     218069     241549      16602.9  PushPop  :fsdp_prefetch_bwd_layer_157    
+      0.0           459574          2     229787.0     229787.0     228926     230648       1217.6  PushPop  :fsdp_prefetch_fwd_layer_76     
+      0.0           459489          2     229744.5     229744.5     226315     233174       4850.0  PushPop  :fsdp_prefetch_fwd_layer_207    
+      0.0           459412          2     229706.0     229706.0     220454     238958      13084.3  PushPop  :fsdp_prefetch_bwd_layer_179    
+      0.0           459224          2     229612.0     229612.0     222288     236936      10357.7  PushPop  :fsdp_prefetch_bwd_layer_46     
+      0.0           459063          2     229531.5     229531.5     225995     233068       5001.4  PushPop  :fsdp_prefetch_fwd_layer_171    
+      0.0           459059          2     229529.5     229529.5     223674     235385       8280.9  PushPop  :fsdp_prefetch_fwd_layer_158    
+      0.0           459036          2     229518.0     229518.0     226742     232294       3925.9  PushPop  :fsdp_prefetch_bwd_layer_102    
+      0.0           459008          2     229504.0     229504.0     214264     244744      21552.6  PushPop  :fsdp_prefetch_fwd_layer_102    
+      0.0           458813          2     229406.5     229406.5     228914     229899        696.5  PushPop  :fsdp_prefetch_fwd_layer_97     
+      0.0           458659          2     229329.5     229329.5     223757     234902       7880.7  PushPop  :fsdp_prefetch_fwd_layer_18     
+      0.0           458369          2     229184.5     229184.5     228538     229831        914.3  PushPop  :fsdp_prefetch_fwd_layer_216    
+      0.0           458051          2     229025.5     229025.5     216413     241638      17836.8  PushPop  :fsdp_prefetch_fwd_layer_191    
+      0.0           457730          2     228865.0     228865.0     221837     235893       9939.1  PushPop  :fsdp_prefetch_bwd_layer_108    
+      0.0           457503          2     228751.5     228751.5     215558     241945      18658.4  PushPop  :fsdp_prefetch_fwd_layer_63     
+      0.0           457441          2     228720.5     228720.5     215942     241499      18071.5  PushPop  :fsdp_prefetch_fwd_layer_80     
+      0.0           457147          2     228573.5     228573.5     211679     245468      23892.4  PushPop  :fsdp_prefetch_bwd_layer_213    
+      0.0           456933          2     228466.5     228466.5     221671     235262       9610.3  PushPop  :fsdp_prefetch_fwd_layer_12     
+      0.0           456738          2     228369.0     228369.0     219215     237523      12945.7  PushPop  :fsdp_prefetch_bwd_layer_90     
+      0.0           456659          2     228329.5     228329.5     220057     236602      11699.1  PushPop  :fsdp_prefetch_bwd_layer_171    
+      0.0           456303          2     228151.5     228151.5     218956     237347      13004.4  PushPop  :fsdp_prefetch_bwd_layer_164    
+      0.0           456125          2     228062.5     228062.5     217798     238327      14516.2  PushPop  :fsdp_prefetch_fwd_layer_179    
+      0.0           455966          2     227983.0     227983.0     215585     240381      17533.4  PushPop  :fsdp_prefetch_fwd_layer_31     
+      0.0           455819          2     227909.5     227909.5     225272     230547       3730.0  PushPop  :fsdp_prefetch_bwd_layer_196    
+      0.0           455768          2     227884.0     227884.0     211612     244156      23012.1  PushPop  :fsdp_prefetch_bwd_layer_222    
+      0.0           455656          2     227828.0     227828.0     220031     235625      11026.6  PushPop  :fsdp_prefetch_fwd_layer_19     
+      0.0           455259          2     227629.5     227629.5     219370     235889      11680.7  PushPop  :fsdp_prefetch_fwd_layer_200    
+      0.0           455072          2     227536.0     227536.0     217985     237087      13507.2  PushPop  :fsdp_prefetch_bwd_layer_158    
+      0.0           454949          2     227474.5     227474.5     224848     230101       3714.4  PushPop  :fsdp_prefetch_bwd_layer_165    
+      0.0           454431          2     227215.5     227215.5     218045     236386      12969.0  PushPop  :fsdp_prefetch_bwd_layer_109    
+      0.0           454351          2     227175.5     227175.5     214030     240321      18590.5  PushPop  :fsdp_prefetch_bwd_layer_207    
+      0.0           454227          2     227113.5     227113.5     215016     239211      17108.4  PushPop  :fsdp_prefetch_bwd_layer_30     
+      0.0           454114          2     227057.0     227057.0     211723     242391      21685.6  PushPop  :fsdp_prefetch_bwd_layer_200    
+      0.0           454068          2     227034.0     227034.0     213030     241038      19804.6  PushPop  :fsdp_prefetch_bwd_layer_210    
+      0.0           453868          2     226934.0     226934.0     221146     232722       8185.5  PushPop  :fsdp_prefetch_bwd_layer_67     
+      0.0           453831          2     226915.5     226915.5     213525     240306      18937.0  PushPop  :fsdp_prefetch_bwd_layer_204    
+      0.0           453817          2     226908.5     226908.5     213558     240259      18880.5  PushPop  :fsdp_prefetch_fwd_layer_15     
+      0.0           453593          2     226796.5     226796.5     215576     238017      15868.2  PushPop  :fsdp_prefetch_bwd_layer_154    
+      0.0           453521          2     226760.5     226760.5     217068     236453      13707.3  PushPop  :fsdp_prefetch_bwd_layer_221    
+      0.0           453490          2     226745.0     226745.0     220044     233446       9476.6  PushPop  :fsdp_prefetch_bwd_layer_92     
+      0.0           453408          2     226704.0     226704.0     225162     228246       2180.7  PushPop  :fsdp_prefetch_bwd_layer_205    
+      0.0           453322          2     226661.0     226661.0     220633     232689       8524.9  PushPop  :fsdp_prefetch_fwd_layer_86     
+      0.0           453245          2     226622.5     226622.5     214796     238449      16725.2  PushPop  :fsdp_prefetch_fwd_layer_183    
+      0.0           452917          2     226458.5     226458.5     222920     229997       5004.2  PushPop  :fsdp_prefetch_bwd_layer_121    
+      0.0           452885          2     226442.5     226442.5     216056     236829      14688.7  PushPop  :fsdp_prefetch_fwd_layer_197    
+      0.0           452838          2     226419.0     226419.0     217183     235655      13061.7  PushPop  :fsdp_prefetch_bwd_layer_218    
+      0.0           452694          2     226347.0     226347.0     215623     237071      15166.0  PushPop  :fsdp_prefetch_fwd_layer_28     
+      0.0           452685          2     226342.5     226342.5     217044     235641      13150.1  PushPop  :fsdp_prefetch_bwd_layer_3      
+      0.0           452600          2     226300.0     226300.0     212718     239882      19207.8  PushPop  :fsdp_prefetch_fwd_layer_213    
+      0.0           452544          2     226272.0     226272.0     208860     243684      24624.3  PushPop  :fsdp_prefetch_bwd_layer_130    
+      0.0           452381          2     226190.5     226190.5     214767     237614      16155.3  PushPop  :fsdp_prefetch_bwd_layer_198    
+      0.0           451931          2     225965.5     225965.5     215806     236125      14367.7  PushPop  :fsdp_prefetch_bwd_layer_51     
+      0.0           451718          2     225859.0     225859.0     215300     236418      14932.7  PushPop  :fsdp_prefetch_fwd_layer_188    
+      0.0           451500          2     225750.0     225750.0     224848     226652       1275.6  PushPop  :fsdp_prefetch_fwd_layer_14     
+      0.0           451336          2     225668.0     225668.0     224239     227097       2020.9  PushPop  :fsdp_prefetch_fwd_layer_53     
+      0.0           451161          2     225580.5     225580.5     216258     234903      13184.0  PushPop  :fsdp_prefetch_bwd_layer_181    
+      0.0           450710          2     225355.0     225355.0     222748     227962       3686.9  PushPop  :fsdp_prefetch_bwd_layer_36     
+      0.0           450480          2     225240.0     225240.0     214077     236403      15786.9  PushPop  :fsdp_prefetch_bwd_layer_69     
+      0.0           450361          2     225180.5     225180.5     215722     234639      13376.3  PushPop  :fsdp_prefetch_fwd_layer_25     
+      0.0           450027          2     225013.5     225013.5     224955     225072         82.7  PushPop  :fsdp_prefetch_fwd_layer_154    
+      0.0           450017          2     225008.5     225008.5     221979     228038       4284.4  PushPop  :fsdp_prefetch_bwd_layer_62     
+      0.0           449786          2     224893.0     224893.0     224442     225344        637.8  PushPop  :fsdp_prefetch_fwd_layer_56     
+      0.0           449611          2     224805.5     224805.5     212415     237196      17522.8  PushPop  :fsdp_prefetch_fwd_layer_175    
+      0.0           449574          2     224787.0     224787.0     210595     238979      20070.5  PushPop  :fsdp_prefetch_bwd_layer_1      
+      0.0           449559          2     224779.5     224779.5     220096     229463       6623.5  PushPop  :fsdp_prefetch_fwd_layer_170    
+      0.0           449356          2     224678.0     224678.0     219620     229736       7153.1  PushPop  :fsdp_prefetch_bwd_layer_194    
+      0.0           449028          2     224514.0     224514.0     222307     226721       3121.2  PushPop  :fsdp_prefetch_fwd_layer_193    
+      0.0           449003          2     224501.5     224501.5     216551     232452      11243.7  PushPop  :fsdp_prefetch_bwd_layer_18     
+      0.0           448954          2     224477.0     224477.0     207765     241189      23634.3  PushPop  :fsdp_prefetch_bwd_layer_125    
+      0.0           448924          2     224462.0     224462.0     213316     235608      15762.8  PushPop  :fsdp_prefetch_fwd_layer_198    
+      0.0           448839          2     224419.5     224419.5     218930     229909       7763.3  PushPop  :fsdp_prefetch_fwd_layer_224    
+      0.0           448796          2     224398.0     224398.0     213817     234979      14963.8  PushPop  :fsdp_prefetch_fwd_layer_150    
+      0.0           448647          2     224323.5     224323.5     209789     238858      20554.9  PushPop  :fsdp_prefetch_bwd_layer_48     
+      0.0           448337          2     224168.5     224168.5     223251     225086       1297.5  PushPop  :fsdp_prefetch_fwd_layer_51     
+      0.0           448034          2     224017.0     224017.0     208543     239491      21883.5  PushPop  :fsdp_prefetch_bwd_layer_146    
+      0.0           447953          2     223976.5     223976.5     219851     228102       5834.3  PushPop  :fsdp_prefetch_bwd_layer_89     
+      0.0           447772          2     223886.0     223886.0     219850     227922       5707.8  PushPop  :fsdp_prefetch_bwd_layer_53     
+      0.0           447502          2     223751.0     223751.0     216035     231467      10912.1  PushPop  :fsdp_prefetch_bwd_layer_168    
+      0.0           447291          2     223645.5     223645.5     221843     225448       2549.1  PushPop  :fsdp_prefetch_bwd_layer_220    
+      0.0           447168          2     223584.0     223584.0     211175     235993      17549.0  PushPop  :fsdp_prefetch_bwd_layer_192    
+      0.0           447134          2     223567.0     223567.0     216711     230423       9695.8  PushPop  :fsdp_prefetch_fwd_layer_178    
+      0.0           446841          2     223420.5     223420.5     212849     233992      14950.4  PushPop  :fsdp_prefetch_bwd_layer_87     
+      0.0           446691          2     223345.5     223345.5     212489     234202      15353.4  PushPop  :fsdp_prefetch_bwd_layer_129    
+      0.0           446497          2     223248.5     223248.5     212055     234442      15830.0  PushPop  :fsdp_prefetch_bwd_layer_216    
+      0.0           446455          2     223227.5     223227.5     220785     225670       3454.2  PushPop  :fsdp_prefetch_bwd_layer_208    
+      0.0           446450          2     223225.0     223225.0     218002     228448       7386.4  PushPop  :fsdp_prefetch_fwd_layer_212    
+      0.0           446253          2     223126.5     223126.5     221576     224677       2192.7  PushPop  :fsdp_prefetch_bwd_layer_8      
+      0.0           446198          2     223099.0     223099.0     218154     228044       6993.3  PushPop  :fsdp_prefetch_bwd_layer_134    
+      0.0           446147          2     223073.5     223073.5     209386     236761      19357.0  PushPop  :fsdp_prefetch_bwd_layer_153    
+      0.0           445850          2     222925.0     222925.0     220890     224960       2877.9  PushPop  :fsdp_prefetch_bwd_layer_74     
+      0.0           445804          2     222902.0     222902.0     213201     232603      13719.3  PushPop  :fsdp_prefetch_bwd_layer_50     
+      0.0           445714          2     222857.0     222857.0     205972     239742      23879.0  PushPop  :fsdp_prefetch_bwd_layer_77     
+      0.0           445582          2     222791.0     222791.0     213511     232071      13123.9  PushPop  :fsdp_prefetch_bwd_layer_202    
+      0.0           445522          2     222761.0     222761.0     209192     236330      19189.5  PushPop  :fsdp_prefetch_bwd_layer_71     
+      0.0           445456          2     222728.0     222728.0     216017     229439       9490.8  PushPop  :fsdp_prefetch_bwd_layer_172    
+      0.0           445282          2     222641.0     222641.0     222632     222650         12.7  PushPop  :fsdp_prefetch_fwd_layer_43     
+      0.0           445078          2     222539.0     222539.0     210736     234342      16692.0  PushPop  :fsdp_prefetch_bwd_layer_27     
+      0.0           445023          2     222511.5     222511.5     217360     227663       7285.3  PushPop  :fsdp_prefetch_fwd_layer_152    
+      0.0           445002          2     222501.0     222501.0     217508     227494       7061.2  PushPop  :fsdp_prefetch_fwd_layer_65     
+      0.0           444820          2     222410.0     222410.0     209437     235383      18346.6  PushPop  :fsdp_prefetch_bwd_layer_40     
+      0.0           444737          2     222368.5     222368.5     218891     225846       4917.9  PushPop  :fsdp_prefetch_bwd_layer_95     
+      0.0           444538          2     222269.0     222269.0     216354     228184       8365.1  PushPop  :fsdp_prefetch_bwd_layer_56     
+      0.0           444246          2     222123.0     222123.0     212198     232048      14036.1  PushPop  :fsdp_prefetch_fwd_layer_185    
+      0.0           444197          2     222098.5     222098.5     215803     228394       8903.2  PushPop  :fsdp_prefetch_bwd_layer_183    
+      0.0           443863          2     221931.5     221931.5     216314     227549       7944.3  PushPop  :fsdp_prefetch_bwd_layer_124    
+      0.0           443661          2     221830.5     221830.5     217755     225906       5763.6  PushPop  :fsdp_prefetch_fwd_layer_37     
+      0.0           443617          2     221808.5     221808.5     212680     230937      12909.6  PushPop  :fsdp_prefetch_fwd_layer_95     
+      0.0           443591          2     221795.5     221795.5     214550     229041      10246.7  PushPop  :fsdp_prefetch_fwd_layer_181    
+      0.0           443195          2     221597.5     221597.5     212856     230339      12362.3  PushPop  :fsdp_prefetch_fwd_layer_176    
+      0.0           443021          2     221510.5     221510.5     212876     230145      12211.0  PushPop  :fsdp_prefetch_bwd_layer_128    
+      0.0           442806          2     221403.0     221403.0     207089     235717      20243.1  PushPop  :fsdp_prefetch_bwd_layer_127    
+      0.0           442782          2     221391.0     221391.0     217232     225550       5881.7  PushPop  :fsdp_prefetch_bwd_layer_214    
+      0.0           442749          2     221374.5     221374.5     214312     228437       9987.9  PushPop  :fsdp_prefetch_fwd_layer_182    
+      0.0           442660          2     221330.0     221330.0     216865     225795       6314.5  PushPop  :fsdp_prefetch_fwd_layer_44     
+      0.0           442489          2     221244.5     221244.5     213218     229271      11351.2  PushPop  :fsdp_prefetch_bwd_layer_65     
+      0.0           442394          2     221197.0     221197.0     218861     223533       3303.6  PushPop  :fsdp_prefetch_bwd_layer_84     
+      0.0           442274          2     221137.0     221137.0     215260     227014       8311.3  PushPop  :fsdp_prefetch_fwd_layer_162    
+      0.0           442227          2     221113.5     221113.5     205319     236908      22336.8  PushPop  :fsdp_prefetch_bwd_layer_32     
+      0.0           442196          2     221098.0     221098.0     205772     236424      21674.2  PushPop  :fsdp_prefetch_bwd_layer_116    
+      0.0           441902          2     220951.0     220951.0     219404     222498       2187.8  PushPop  :fsdp_prefetch_bwd_layer_26     
+      0.0           441828          2     220914.0     220914.0     204185     237643      23658.4  PushPop  :fsdp_prefetch_bwd_layer_5      
+      0.0           441767          2     220883.5     220883.5     213243     228524      10805.3  PushPop  :fsdp_prefetch_bwd_layer_54     
+      0.0           441727          2     220863.5     220863.5     218528     223199       3302.9  PushPop  :fsdp_prefetch_bwd_layer_145    
+      0.0           441678          2     220839.0     220839.0     211772     229906      12822.7  PushPop  :fsdp_prefetch_bwd_layer_151    
+      0.0           441674          2     220837.0     220837.0     217615     224059       4556.6  PushPop  :fsdp_prefetch_fwd_layer_160    
+      0.0           441619          2     220809.5     220809.5     212360     229259      11949.4  PushPop  :fsdp_prefetch_fwd_layer_16     
+      0.0           441537          2     220768.5     220768.5     214850     226687       8370.0  PushPop  :fsdp_prefetch_fwd_layer_20     
+      0.0           441428          2     220714.0     220714.0     213384     228044      10366.2  PushPop  :fsdp_prefetch_bwd_layer_182    
+      0.0           441378          2     220689.0     220689.0     213152     228226      10658.9  PushPop  :fsdp_prefetch_bwd_layer_64     
+      0.0           441299          2     220649.5     220649.5     217194     224105       4886.8  PushPop  :fsdp_prefetch_fwd_layer_21     
+      0.0           441057          2     220528.5     220528.5     215861     225196       6600.8  PushPop  :fsdp_prefetch_bwd_layer_19     
+      0.0           441007          2     220503.5     220503.5     215319     225688       7332.0  PushPop  :fsdp_prefetch_fwd_layer_172    
+      0.0           440207          2     220103.5     220103.5     217736     222471       3348.2  PushPop  :fsdp_prefetch_bwd_layer_156    
+      0.0           440152          2     220076.0     220076.0     216332     223820       5294.8  PushPop  :fsdp_prefetch_bwd_layer_132    
+      0.0           439957          2     219978.5     219978.5     213437     226520       9251.1  PushPop  :fsdp_prefetch_fwd_layer_219    
+      0.0           439690          2     219845.0     219845.0     215679     224011       5891.6  PushPop  :fsdp_prefetch_bwd_layer_160    
+      0.0           439639          2     219819.5     219819.5     215442     224197       6190.7  PushPop  :fsdp_prefetch_fwd_layer_4      
+      0.0           439548          2     219774.0     219774.0     213312     226236       9138.6  PushPop  :fsdp_prefetch_bwd_layer_209    
+      0.0           439396          2     219698.0     219698.0     219523     219873        247.5  PushPop  :fsdp_prefetch_bwd_layer_201    
+      0.0           439373          2     219686.5     219686.5     203430     235943      22990.2  PushPop  :fsdp_prefetch_bwd_layer_7      
+      0.0           439243          2     219621.5     219621.5     217635     221608       2809.3  PushPop  :fsdp_prefetch_fwd_layer_32     
+      0.0           438957          2     219478.5     219478.5     214383     224574       7206.1  PushPop  :fsdp_prefetch_fwd_layer_151    
+      0.0           438929          2     219464.5     219464.5     218551     220378       1291.9  PushPop  :fsdp_prefetch_bwd_layer_152    
+      0.0           438900          2     219450.0     219450.0     216804     222096       3742.0  PushPop  :fsdp_prefetch_bwd_layer_73     
+      0.0           438849          2     219424.5     219424.5     214047     224802       7604.9  PushPop  :fsdp_prefetch_bwd_layer_2      
+      0.0           438757          2     219378.5     219378.5     216826     221931       3609.8  PushPop  :fsdp_prefetch_bwd_layer_155    
+      0.0           438658          2     219329.0     219329.0     214999     223659       6123.5  PushPop  :fsdp_prefetch_fwd_layer_59     
+      0.0           438533          2     219266.5     219266.5     215814     222719       4882.6  PushPop  :fsdp_prefetch_bwd_layer_199    
+      0.0           438384          2     219192.0     219192.0     216407     221977       3938.6  PushPop  :fsdp_prefetch_bwd_layer_193    
+      0.0           437824          2     218912.0     218912.0     207817     230007      15690.7  PushPop  :fsdp_prefetch_bwd_layer_83     
+      0.0           437581          2     218790.5     218790.5     217859     219722       1317.3  PushPop  :fsdp_prefetch_fwd_layer_36     
+      0.0           437533          2     218766.5     218766.5     205826     231707      18300.6  PushPop  :fsdp_prefetch_bwd_layer_147    
+      0.0           437420          2     218710.0     218710.0     213892     223528       6813.7  PushPop  :fsdp_prefetch_fwd_layer_204    
+      0.0           437406          2     218703.0     218703.0     216159     221247       3597.8  PushPop  :fsdp_prefetch_fwd_layer_62     
+      0.0           437305          2     218652.5     218652.5     214925     222380       5271.5  PushPop  :fsdp_prefetch_bwd_layer_188    
+      0.0           437265          2     218632.5     218632.5     213967     223298       6598.0  PushPop  :fsdp_prefetch_fwd_layer_58     
+      0.0           437177          2     218588.5     218588.5     216017     221160       3636.7  PushPop  :fsdp_prefetch_fwd_layer_41     
+      0.0           437147          2     218573.5     218573.5     218412     218735        228.4  PushPop  :fsdp_prefetch_fwd_layer_38     
+      0.0           436840          2     218420.0     218420.0     216813     220027       2272.6  PushPop  :fsdp_prefetch_bwd_layer_22     
+      0.0           436380          2     218190.0     218190.0     208961     227419      13051.8  PushPop  :fsdp_prefetch_bwd_layer_78     
+      0.0           436323          2     218161.5     218161.5     211685     224638       9159.2  PushPop  :fsdp_prefetch_bwd_layer_86     
+      0.0           436021          2     218010.5     218010.5     217857     218164        217.1  PushPop  :fsdp_prefetch_fwd_layer_17     
+      0.0           435910          2     217955.0     217955.0     211894     224016       8571.5  PushPop  :fsdp_prefetch_bwd_layer_91     
+      0.0           435659          2     217829.5     217829.5     212326     223333       7783.1  PushPop  :fsdp_prefetch_fwd_layer_203    
+      0.0           435151          2     217575.5     217575.5     212291     222860       7473.4  PushPop  :fsdp_prefetch_bwd_layer_59     
+      0.0           435080          2     217540.0     217540.0     209131     225949      11892.1  PushPop  :fsdp_prefetch_bwd_layer_88     
+      0.0           435004          2     217502.0     217502.0     211755     223249       8127.5  PushPop  :fsdp_prefetch_bwd_layer_21     
+      0.0           434917          2     217458.5     217458.5     208262     226655      13005.8  PushPop  :fsdp_prefetch_bwd_layer_93     
+      0.0           434608          2     217304.0     217304.0     215377     219231       2725.2  PushPop  :fsdp_prefetch_fwd_layer_222    
+      0.0           434596          2     217298.0     217298.0     217222     217374        107.5  PushPop  :fsdp_prefetch_fwd_layer_202    
+      0.0           434519          2     217259.5     217259.5     213080     221439       5910.7  PushPop  :fsdp_prefetch_bwd_layer_66     
+      0.0           433754          2     216877.0     216877.0     215386     218368       2108.6  PushPop  :fsdp_prefetch_bwd_layer_28     
+      0.0           433542          2     216771.0     216771.0     213719     219823       4316.2  PushPop  :fsdp_prefetch_bwd_layer_43     
+      0.0           433325          2     216662.5     216662.5     213588     219737       4348.0  PushPop  :fsdp_prefetch_fwd_layer_157    
+      0.0           433250          2     216625.0     216625.0     204734     228516      16816.4  PushPop  :fsdp_prefetch_bwd_layer_138    
+      0.0           433159          2     216579.5     216579.5     215509     217650       1513.9  PushPop  :fsdp_prefetch_fwd_layer_201    
+      0.0           433046          2     216523.0     216523.0     213039     220007       4927.1  PushPop  :fsdp_prefetch_bwd_layer_190    
+      0.0           432844          2     216422.0     216422.0     205954     226890      14804.0  PushPop  :fsdp_prefetch_bwd_layer_85     
+      0.0           432539          2     216269.5     216269.5     212915     219624       4744.0  PushPop  :fsdp_prefetch_fwd_layer_42     
+      0.0           432304          2     216152.0     216152.0     208536     223768      10770.7  PushPop  :fsdp_prefetch_bwd_layer_11     
+      0.0           432230          2     216115.0     216115.0     208700     223530      10486.4  PushPop  :fsdp_prefetch_bwd_layer_6      
+      0.0           432191          2     216095.5     216095.5     214032     218159       2918.2  PushPop  :fsdp_prefetch_fwd_layer_223    
+      0.0           432116          2     216058.0     216058.0     212518     219598       5006.3  PushPop  :fsdp_prefetch_bwd_layer_110    
+      0.0           432071          2     216035.5     216035.5     214478     217593       2202.6  PushPop  :fsdp_prefetch_bwd_layer_211    
+      0.0           431894          2     215947.0     215947.0     211079     220815       6884.4  PushPop  :fsdp_prefetch_bwd_layer_9      
+      0.0           431740          2     215870.0     215870.0     214129     217611       2462.1  PushPop  :fsdp_prefetch_fwd_layer_186    
+      0.0           431728          2     215864.0     215864.0     213872     217856       2817.1  PushPop  :fsdp_prefetch_fwd_layer_61     
+      0.0           431610          2     215805.0     215805.0     215801     215809          5.7  PushPop  :fsdp_prefetch_fwd_layer_205    
+      0.0           431551          2     215775.5     215775.5     212867     218684       4113.2  PushPop  :fsdp_prefetch_bwd_layer_82     
+      0.0           431452          2     215726.0     215726.0     215186     216266        763.7  PushPop  :fsdp_prefetch_fwd_layer_109    
+      0.0           431448          2     215724.0     215724.0     215518     215930        291.3  PushPop  :fsdp_prefetch_fwd_layer_177    
+      0.0           431216          2     215608.0     215608.0     214716     216500       1261.5  PushPop  :fsdp_prefetch_bwd_layer_219    
+      0.0           431008          2     215504.0     215504.0     215102     215906        568.5  PushPop  :fsdp_prefetch_fwd_layer_40     
+      0.0           430637          2     215318.5     215318.5     211335     219302       5633.5  PushPop  :fsdp_prefetch_fwd_layer_218    
+      0.0           430452          2     215226.0     215226.0     202000     228452      18704.4  PushPop  :fsdp_prefetch_bwd_layer_140    
+      0.0           430248          2     215124.0     215124.0     213042     217206       2944.4  PushPop  :fsdp_prefetch_fwd_layer_220    
+      0.0           429909          2     214954.5     214954.5     211745     218164       4538.9  PushPop  :fsdp_prefetch_bwd_layer_197    
+      0.0           429869          2     214934.5     214934.5     214865     215004         98.3  PushPop  :fsdp_prefetch_bwd_layer_112    
+      0.0           429808          2     214904.0     214904.0     214070     215738       1179.5  PushPop  :fsdp_prefetch_fwd_layer_199    
+      0.0           429796          2     214898.0     214898.0     214846     214950         73.5  PushPop  :fsdp_prefetch_bwd_layer_126    
+      0.0           429590          2     214795.0     214795.0     212080     217510       3839.6  PushPop  :fsdp_prefetch_fwd_layer_57     
+      0.0           429355          2     214677.5     214677.5     212135     217220       3595.6  PushPop  :fsdp_prefetch_bwd_layer_81     
+      0.0           429291          2     214645.5     214645.5     214058     215233        830.9  PushPop  :fsdp_prefetch_fwd_layer_35     
+      0.0           429253          2     214626.5     214626.5     210241     219012       6202.0  PushPop  :fsdp_prefetch_bwd_layer_25     
+      0.0           428982          2     214491.0     214491.0     209582     219400       6942.4  PushPop  :fsdp_prefetch_bwd_layer_94     
+      0.0           428941          2     214470.5     214470.5     212852     216089       2288.9  PushPop  :fsdp_prefetch_bwd_layer_189    
+      0.0           428940          2     214470.0     214470.0     209620     219320       6858.9  PushPop  :fsdp_prefetch_fwd_layer_190    
+      0.0           428828          2     214414.0     214414.0     212237     216591       3078.7  PushPop  :fsdp_prefetch_fwd_layer_11     
+      0.0           428659          2     214329.5     214329.5     214184     214475        205.8  PushPop  :fsdp_prefetch_fwd_layer_214    
+      0.0           428508          2     214254.0     214254.0     213940     214568        444.1  PushPop  :fsdp_prefetch_bwd_layer_166    
+      0.0           428104          2     214052.0     214052.0     210546     217558       4958.2  PushPop  :fsdp_prefetch_bwd_layer_0      
+      0.0           427602          2     213801.0     213801.0     203853     223749      14068.6  PushPop  :fsdp_prefetch_bwd_layer_105    
+      0.0           427541          2     213770.5     213770.5     210328     217213       4868.4  PushPop  :fsdp_prefetch_bwd_layer_38     
+      0.0           427491          2     213745.5     213745.5     208527     218964       7380.1  PushPop  :fsdp_prefetch_bwd_layer_117    
+      0.0           427474          2     213737.0     213737.0     213326     214148        581.2  PushPop  :fsdp_prefetch_bwd_layer_58     
+      0.0           426964          2     213482.0     213482.0     212028     214936       2056.3  PushPop  :fsdp_prefetch_bwd_layer_195    
+      0.0           426533          2     213266.5     213266.5     204279     222254      12710.2  PushPop  :fsdp_prefetch_bwd_layer_14     
+      0.0           425931          2     212965.5     212965.5     205492     220439      10569.1  PushPop  :fsdp_prefetch_bwd_layer_98     
+      0.0           423105          2     211552.5     211552.5     211073     212032        678.1  PushPop  :fsdp_prefetch_bwd_layer_42     
+      0.0           422796          2     211398.0     211398.0     206600     216196       6785.4  PushPop  :fsdp_prefetch_bwd_layer_113    
+      0.0           422726          2     211363.0     211363.0     207593     215133       5331.6  PushPop  :fsdp_prefetch_bwd_layer_215    
+      0.0           422508          2     211254.0     211254.0     210227     212281       1452.4  PushPop  :fsdp_prefetch_bwd_layer_15     
+      0.0           422308          2     211154.0     211154.0     207872     214436       4641.4  PushPop  :fsdp_prefetch_bwd_layer_217    
+      0.0           421657          2     210828.5     210828.5     204417     217240       9067.2  PushPop  :fsdp_prefetch_bwd_layer_68     
+      0.0           421209          2     210604.5     210604.5     207802     213407       3963.3  PushPop  :fsdp_prefetch_bwd_layer_111    
+      0.0           420004          2     210002.0     210002.0     205868     214136       5846.4  PushPop  :fsdp_prefetch_bwd_layer_96     
+      0.0           419289          2     209644.5     209644.5     204923     214366       6677.2  PushPop  :fsdp_prefetch_bwd_layer_4      
+      0.0           419186          2     209593.0     209593.0     208339     210847       1773.4  PushPop  :fsdp_prefetch_bwd_layer_57     
+      0.0           418695          2     209347.5     209347.5     206964     211731       3370.8  PushPop  :fsdp_prefetch_bwd_layer_133    
+      0.0           418608          2     209304.0     209304.0     205461     213147       5434.8  PushPop  :fsdp_prefetch_bwd_layer_39     
+      0.0           418540          2     209270.0     209270.0     208629     209911        906.5  PushPop  :fsdp_prefetch_bwd_layer_13     
+      0.0           418294          2     209147.0     209147.0     206822     211472       3288.0  PushPop  :fsdp_prefetch_bwd_layer_47     
+      0.0           418259          2     209129.5     209129.5     206307     211952       3991.6  PushPop  :fsdp_prefetch_bwd_layer_60     
+      0.0           418153          2     209076.5     209076.5     207100     211053       2795.2  PushPop  :fsdp_prefetch_bwd_layer_55     
+      0.0           418138          2     209069.0     209069.0     203587     214551       7752.7  PushPop  :fsdp_prefetch_bwd_layer_75     
+      0.0           417556          2     208778.0     208778.0     206795     210761       2804.4  PushPop  :fsdp_prefetch_bwd_layer_49     
+      0.0           417529          2     208764.5     208764.5     204665     212864       5797.6  PushPop  :fsdp_prefetch_bwd_layer_70     
+      0.0           417093          2     208546.5     208546.5     206537     210556       2841.9  PushPop  :fsdp_prefetch_bwd_layer_29     
+      0.0           416395          2     208197.5     208197.5     206837     209558       1924.0  PushPop  :fsdp_prefetch_bwd_layer_20     
+      0.0           124946          2      62473.0      62473.0      60845      64101       2302.3  PushPop  :fsdp_wait_bwd_layer_225        
+      0.0           106515          2      53257.5      53257.5      48669      57846       6489.1  PushPop  :fsdp_wait_bwd_layer_199        
+      0.0            97982          2      48991.0      48991.0      48918      49064        103.2  PushPop  :fsdp_wait_bwd_layer_45         
+      0.0            92738          2      46369.0      46369.0      36247      56491      14314.7  PushPop  :fsdp_wait_fwd_layer_78         
+      0.0            91852          2      45926.0      45926.0      26260      65592      27811.9  PushPop  :fsdp_wait_fwd_layer_145        
+      0.0            87493          2      43746.5      43746.5      40240      47253       4958.9  PushPop  :fsdp_wait_fwd_layer_144        
+      0.0            79078          2      39539.0      39539.0      25105      53973      20412.8  PushPop  :fsdp_wait_fwd_layer_201        
+      0.0            77639          2      38819.5      38819.5      29359      48280      13379.2  PushPop  :fsdp_wait_fwd_layer_137        
+      0.0            77638          2      38819.0      38819.0      33029      44609       8188.3  PushPop  :fsdp_wait_fwd_layer_114        
+      0.0            77451          2      38725.5      38725.5      24609      52842      19963.7  PushPop  :fsdp_wait_fwd_layer_74         
+      0.0            77095          2      38547.5      38547.5      31165      45930      10440.4  PushPop  :fsdp_wait_fwd_layer_100        
+      0.0            75920          2      37960.0      37960.0      25589      50331      17495.2  PushPop  :fsdp_wait_fwd_layer_123        
+      0.0            75776          2      37888.0      37888.0      24261      51515      19271.5  PushPop  :fsdp_wait_fwd_layer_186        
+      0.0            75581          2      37790.5      37790.5      23370      52211      20393.7  PushPop  :fsdp_wait_fwd_layer_98         
+      0.0            75344          2      37672.0      37672.0      24830      50514      18161.3  PushPop  :fsdp_wait_bwd_layer_172        
+      0.0            75169          2      37584.5      37584.5      25289      49880      17388.5  PushPop  :fsdp_wait_fwd_layer_95         
+      0.0            74283          2      37141.5      37141.5      24243      50040      18241.2  PushPop  :fsdp_wait_fwd_layer_166        
+      0.0            73273          2      36636.5      36636.5      24925      48348      16562.6  PushPop  :fsdp_wait_bwd_layer_94         
+      0.0            72919          2      36459.5      36459.5      24540      48379      16856.7  PushPop  :fsdp_wait_bwd_layer_179        
+      0.0            72588          2      36294.0      36294.0      30323      42265       8444.3  PushPop  :fsdp_wait_fwd_layer_113        
+      0.0            72548          2      36274.0      36274.0      27619      44929      12240.0  PushPop  :fsdp_wait_fwd_layer_116        
+      0.0            71977          2      35988.5      35988.5      25174      46803      15294.0  PushPop  :fsdp_wait_bwd_layer_38         
+      0.0            71791          2      35895.5      35895.5      28093      43698      11034.4  PushPop  :fsdp_wait_bwd_layer_182        
+      0.0            71638          2      35819.0      35819.0      25594      46044      14460.3  PushPop  :fsdp_wait_fwd_layer_162        
+      0.0            71632          2      35816.0      35816.0      27300      44332      12043.4  PushPop  :fsdp_wait_fwd_layer_219        
+      0.0            69975          2      34987.5      34987.5      24590      45385      14704.3  PushPop  :fsdp_wait_fwd_layer_120        
+      0.0            69219          2      34609.5      34609.5      23966      45253      15052.2  PushPop  :fsdp_wait_bwd_layer_200        
+      0.0            69014          2      34507.0      34507.0      22366      46648      17170.0  PushPop  :fsdp_wait_bwd_layer_92         
+      0.0            67234          2      33617.0      33617.0      25232      42002      11858.2  PushPop  :fsdp_wait_fwd_layer_22         
+      0.0            67188          2      33594.0      33594.0      22753      44435      15331.5  PushPop  :fsdp_wait_fwd_layer_203        
+      0.0            67082          2      33541.0      33541.0      24709      42373      12490.3  PushPop  :fsdp_wait_bwd_layer_116        
+      0.0            66818          2      33409.0      33409.0      26212      40606      10178.1  PushPop  :fsdp_wait_fwd_layer_172        
+      0.0            66699          2      33349.5      33349.5      23529      43170      13888.3  PushPop  :fsdp_wait_bwd_layer_4          
+      0.0            66454          2      33227.0      33227.0      25914      40540      10342.1  PushPop  :fsdp_wait_fwd_layer_192        
+      0.0            66022          2      33011.0      33011.0      25377      40645      10796.1  PushPop  :fsdp_wait_fwd_layer_121        
+      0.0            65848          2      32924.0      32924.0      24546      41302      11848.3  PushPop  :fsdp_wait_fwd_layer_157        
+      0.0            65788          2      32894.0      32894.0      27578      38210       7518.0  PushPop  :fsdp_wait_fwd_layer_128        
+      0.0            65510          2      32755.0      32755.0      29310      36200       4872.0  PushPop  :fsdp_wait_fwd_layer_103        
+      0.0            64868          2      32434.0      32434.0      23388      41480      12793.0  PushPop  :fsdp_wait_fwd_layer_223        
+      0.0            64854          2      32427.0      32427.0      26661      38193       8154.4  PushPop  :fsdp_wait_fwd_layer_191        
+      0.0            64799          2      32399.5      32399.5      24650      40149      10959.4  PushPop  :fsdp_wait_bwd_layer_99         
+      0.0            64605          2      32302.5      32302.5      26328      38277       8449.2  PushPop  :fsdp_wait_fwd_layer_73         
+      0.0            64191          2      32095.5      32095.5      21606      42585      14834.4  PushPop  :fsdp_wait_bwd_layer_148        
+      0.0            64048          2      32024.0      32024.0      21916      42132      14294.9  PushPop  :fsdp_wait_bwd_layer_212        
+      0.0            63898          2      31949.0      31949.0      21837      42061      14300.5  PushPop  :fsdp_wait_bwd_layer_169        
+      0.0            63633          2      31816.5      31816.5      31040      32593       1098.1  PushPop  :fsdp_wait_bwd_layer_100        
+      0.0            63191          2      31595.5      31595.5      26007      37184       7903.3  PushPop  :fsdp_wait_fwd_layer_138        
+      0.0            63171          2      31585.5      31585.5      22556      40615      12769.6  PushPop  :fsdp_wait_bwd_layer_51         
+      0.0            63023          2      31511.5      31511.5      21488      41535      14175.4  PushPop  :fsdp_wait_bwd_layer_71         
+      0.0            62833          2      31416.5      31416.5      22495      40338      12616.9  PushPop  :fsdp_wait_bwd_layer_106        
+      0.0            62479          2      31239.5      31239.5      21822      40657      13318.4  PushPop  :fsdp_wait_bwd_layer_50         
+      0.0            61833          2      30916.5      30916.5      26367      35466       6434.0  PushPop  :fsdp_wait_fwd_layer_65         
+      0.0            61815          2      30907.5      30907.5      29822      31993       1535.1  PushPop  :fsdp_wait_fwd_layer_87         
+      0.0            61710          2      30855.0      30855.0      26214      35496       6563.4  PushPop  :fsdp_wait_fwd_layer_4          
+      0.0            61699          2      30849.5      30849.5      21894      39805      12665.0  PushPop  :fsdp_wait_bwd_layer_184        
+      0.0            61466          2      30733.0      30733.0      20989      40477      13780.1  PushPop  :fsdp_wait_bwd_layer_149        
+      0.0            61214          2      30607.0      30607.0      24901      36313       8069.5  PushPop  :fsdp_wait_fwd_layer_170        
+      0.0            60689          2      30344.5      30344.5      30074      30615        382.5  PushPop  :fsdp_wait_fwd_layer_37         
+      0.0            60610          2      30305.0      30305.0      26913      33697       4797.0  PushPop  :fsdp_wait_fwd_layer_140        
+      0.0            60399          2      30199.5      30199.5      26355      34044       5436.9  PushPop  :fsdp_wait_fwd_layer_23         
+      0.0            60347          2      30173.5      30173.5      28478      31869       2397.8  PushPop  :fsdp_wait_bwd_layer_185        
+      0.0            60261          2      30130.5      30130.5      23447      36814       9451.9  PushPop  :fsdp_wait_fwd_layer_133        
+      0.0            60150          2      30075.0      30075.0      24516      35634       7861.6  PushPop  :fsdp_wait_bwd_layer_108        
+      0.0            59940          2      29970.0      29970.0      27945      31995       2863.8  PushPop  :fsdp_wait_fwd_layer_58         
+      0.0            59734          2      29867.0      29867.0      29463      30271        571.3  PushPop  :fsdp_wait_fwd_layer_141        
+      0.0            59657          2      29828.5      29828.5      27756      31901       2931.0  PushPop  :fsdp_wait_fwd_layer_3          
+      0.0            59615          2      29807.5      29807.5      24995      34620       6805.9  PushPop  :fsdp_wait_fwd_layer_5          
+      0.0            59339          2      29669.5      29669.5      26575      32764       4376.3  PushPop  :fsdp_wait_fwd_layer_163        
+      0.0            59214          2      29607.0      29607.0      24906      34308       6648.2  PushPop  :fsdp_wait_bwd_layer_151        
+      0.0            59055          2      29527.5      29527.5      24604      34451       6962.9  PushPop  :fsdp_wait_fwd_layer_48         
+      0.0            59036          2      29518.0      29518.0      26227      32809       4654.2  PushPop  :fsdp_wait_fwd_layer_44         
+      0.0            59018          2      29509.0      29509.0      26280      32738       4566.5  PushPop  :fsdp_wait_fwd_layer_16         
+      0.0            58973          2      29486.5      29486.5      23586      35387       8344.6  PushPop  :fsdp_wait_fwd_layer_126        
+      0.0            58807          2      29403.5      29403.5      26823      31984       3649.4  PushPop  :fsdp_wait_fwd_layer_85         
+      0.0            58649          2      29324.5      29324.5      25891      32758       4855.7  PushPop  :fsdp_wait_bwd_layer_81         
+      0.0            58413          2      29206.5      29206.5      28741      29672        658.3  PushPop  :fsdp_wait_fwd_layer_106        
+      0.0            58278          2      29139.0      29139.0      25267      33011       5475.8  PushPop  :fsdp_wait_fwd_layer_79         
+      0.0            58094          2      29047.0      29047.0      24862      33232       5918.5  PushPop  :fsdp_wait_fwd_layer_164        
+      0.0            57713          2      28856.5      28856.5      25535      32178       4697.3  PushPop  :fsdp_wait_fwd_layer_122        
+      0.0            57647          2      28823.5      28823.5      24659      32988       5889.5  PushPop  :fsdp_wait_bwd_layer_25         
+      0.0            57397          2      28698.5      28698.5      28013      29384        969.4  PushPop  :fsdp_wait_fwd_layer_132        
+      0.0            57327          2      28663.5      28663.5      24498      32829       5890.9  PushPop  :fsdp_wait_bwd_layer_101        
+      0.0            57307          2      28653.5      28653.5      22940      34367       8080.1  PushPop  :fsdp_wait_fwd_layer_167        
+      0.0            57257          2      28628.5      28628.5      25975      31282       3752.6  PushPop  :fsdp_wait_bwd_layer_170        
+      0.0            57226          2      28613.0      28613.0      25055      32171       5031.8  PushPop  :fsdp_wait_fwd_layer_134        
+      0.0            57065          2      28532.5      28532.5      26671      30394       2632.6  PushPop  :fsdp_wait_fwd_layer_94         
+      0.0            56812          2      28406.0      28406.0      28181      28631        318.2  PushPop  :fsdp_wait_fwd_layer_18         
+      0.0            56775          2      28387.5      28387.5      26134      30641       3186.9  PushPop  :fsdp_wait_fwd_layer_205        
+      0.0            56588          2      28294.0      28294.0      25609      30979       3797.2  PushPop  :fsdp_wait_fwd_layer_51         
+      0.0            56576          2      28288.0      28288.0      25656      30920       3722.2  PushPop  :fsdp_wait_fwd_layer_142        
+      0.0            56508          2      28254.0      28254.0      26452      30056       2548.4  PushPop  :fsdp_wait_fwd_layer_82         
+      0.0            56504          2      28252.0      28252.0      25105      31399       4450.5  PushPop  :fsdp_wait_fwd_layer_39         
+      0.0            56379          2      28189.5      28189.5      22728      33651       7723.7  PushPop  :fsdp_wait_fwd_layer_174        
+      0.0            56331          2      28165.5      28165.5      25257      31074       4113.2  PushPop  :fsdp_wait_fwd_layer_32         
+      0.0            56299          2      28149.5      28149.5      26712      29587       2032.9  PushPop  :fsdp_wait_fwd_layer_115        
+      0.0            56274          2      28137.0      28137.0      25127      31147       4256.8  PushPop  :fsdp_wait_fwd_layer_66         
+      0.0            56132          2      28066.0      28066.0      25072      31060       4234.2  PushPop  :fsdp_wait_fwd_layer_127        
+      0.0            56108          2      28054.0      28054.0      25516      30592       3589.3  PushPop  :fsdp_wait_fwd_layer_135        
+      0.0            56064          2      28032.0      28032.0      24905      31159       4422.2  PushPop  :fsdp_wait_fwd_layer_143        
+      0.0            56064          2      28032.0      28032.0      25656      30408       3360.2  PushPop  :fsdp_wait_fwd_layer_20         
+      0.0            56022          2      28011.0      28011.0      25311      30711       3818.4  PushPop  :fsdp_wait_fwd_layer_156        
+      0.0            55878          2      27939.0      27939.0      26641      29237       1835.6  PushPop  :fsdp_wait_fwd_layer_86         
+      0.0            55771          2      27885.5      27885.5      24352      31419       4997.1  PushPop  :fsdp_wait_fwd_layer_47         
+      0.0            55577          2      27788.5      27788.5      27674      27903        161.9  PushPop  :fsdp_wait_fwd_layer_2          
+      0.0            55542          2      27771.0      27771.0      25922      29620       2614.9  PushPop  :fsdp_wait_fwd_layer_93         
+      0.0            55350          2      27675.0      27675.0      23226      32124       6291.8  PushPop  :fsdp_wait_fwd_layer_209        
+      0.0            55235          2      27617.5      27617.5      24823      30412       3952.0  PushPop  :fsdp_wait_fwd_layer_117        
+      0.0            55203          2      27601.5      27601.5      27180      28023        596.1  PushPop  :fsdp_wait_fwd_layer_108        
+      0.0            55180          2      27590.0      27590.0      25653      29527       2739.3  PushPop  :fsdp_wait_bwd_layer_168        
+      0.0            55146          2      27573.0      27573.0      23537      31609       5707.8  PushPop  :fsdp_wait_fwd_layer_97         
+      0.0            55140          2      27570.0      27570.0      27124      28016        630.7  PushPop  :fsdp_wait_fwd_layer_1          
+      0.0            55119          2      27559.5      27559.5      24336      30783       4558.7  PushPop  :fsdp_wait_bwd_layer_137        
+      0.0            55102          2      27551.0      27551.0      24942      30160       3689.7  PushPop  :fsdp_wait_fwd_layer_89         
+      0.0            55061          2      27530.5      27530.5      26096      28965       2028.7  PushPop  :fsdp_wait_fwd_layer_124        
+      0.0            55055          2      27527.5      27527.5      24792      30263       3868.6  PushPop  :fsdp_wait_fwd_layer_81         
+      0.0            54992          2      27496.0      27496.0      25410      29582       2950.0  PushPop  :fsdp_wait_fwd_layer_130        
+      0.0            54896          2      27448.0      27448.0      24185      30711       4614.6  PushPop  :fsdp_wait_bwd_layer_186        
+      0.0            54873          2      27436.5      27436.5      24037      30836       4807.6  PushPop  :fsdp_wait_bwd_layer_70         
+      0.0            54700          2      27350.0      27350.0      26721      27979        889.5  PushPop  :fsdp_wait_fwd_layer_0          
+      0.0            54641          2      27320.5      27320.5      23693      30948       5130.1  PushPop  :fsdp_wait_bwd_layer_105        
+      0.0            54535          2      27267.5      27267.5      25465      29070       2549.1  PushPop  :fsdp_wait_fwd_layer_67         
+      0.0            54509          2      27254.5      27254.5      24328      30181       4138.7  PushPop  :fsdp_wait_fwd_layer_110        
+      0.0            54461          2      27230.5      27230.5      24943      29518       3235.0  PushPop  :fsdp_wait_bwd_layer_98         
+      0.0            54409          2      27204.5      27204.5      25919      28490       1818.0  PushPop  :fsdp_wait_bwd_layer_206        
+      0.0            54398          2      27199.0      27199.0      24545      29853       3753.3  PushPop  :fsdp_wait_fwd_layer_54         
+      0.0            54229          2      27114.5      27114.5      22331      31898       6764.9  PushPop  :fsdp_wait_bwd_layer_2          
+      0.0            54071          2      27035.5      27035.5      26718      27353        449.0  PushPop  :fsdp_wait_bwd_layer_220        
+      0.0            53979          2      26989.5      26989.5      24383      29596       3686.1  PushPop  :fsdp_wait_fwd_layer_136        
+      0.0            53972          2      26986.0      26986.0      24692      29280       3244.2  PushPop  :fsdp_wait_bwd_layer_175        
+      0.0            53951          2      26975.5      26975.5      23539      30412       4859.9  PushPop  :fsdp_wait_bwd_layer_187        
+      0.0            53708          2      26854.0      26854.0      26420      27288        613.8  PushPop  :fsdp_wait_fwd_layer_221        
+      0.0            53660          2      26830.0      26830.0      23899      29761       4145.1  PushPop  :fsdp_wait_bwd_layer_189        
+      0.0            53582          2      26791.0      26791.0      25788      27794       1418.5  PushPop  :fsdp_wait_bwd_layer_115        
+      0.0            53578          2      26789.0      26789.0      25693      27885       1550.0  PushPop  :fsdp_wait_fwd_layer_198        
+      0.0            53493          2      26746.5      26746.5      24156      29337       3663.5  PushPop  :fsdp_wait_fwd_layer_131        
+      0.0            53423          2      26711.5      26711.5      24891      28532       2574.6  PushPop  :fsdp_wait_bwd_layer_158        
+      0.0            53383          2      26691.5      26691.5      26659      26724         46.0  PushPop  :fsdp_wait_fwd_layer_31         
+      0.0            53366          2      26683.0      26683.0      24914      28452       2501.7  PushPop  :fsdp_wait_bwd_layer_119        
+      0.0            53365          2      26682.5      26682.5      25572      27793       1570.5  PushPop  :fsdp_wait_fwd_layer_8          
+      0.0            53355          2      26677.5      26677.5      25999      27356        959.5  PushPop  :fsdp_wait_bwd_layer_73         
+      0.0            53305          2      26652.5      26652.5      25851      27454       1133.5  PushPop  :fsdp_wait_fwd_layer_204        
+      0.0            53141          2      26570.5      26570.5      25613      27528       1354.1  PushPop  :fsdp_wait_fwd_layer_129        
+      0.0            53115          2      26557.5      26557.5      22993      30122       5041.0  PushPop  :fsdp_wait_fwd_layer_13         
+      0.0            52988          2      26494.0      26494.0      26008      26980        687.3  PushPop  :fsdp_wait_bwd_layer_87         
+      0.0            52890          2      26445.0      26445.0      22156      30734       6065.6  PushPop  :fsdp_wait_bwd_layer_135        
+      0.0            52841          2      26420.5      26420.5      24233      28608       3093.6  PushPop  :fsdp_wait_fwd_layer_75         
+      0.0            52778          2      26389.0      26389.0      26206      26572        258.8  PushPop  :fsdp_wait_fwd_layer_9          
+      0.0            52727          2      26363.5      26363.5      23040      29687       4700.1  PushPop  :fsdp_wait_fwd_layer_104        
+      0.0            52699          2      26349.5      26349.5      24955      27744       1972.1  PushPop  :fsdp_wait_fwd_layer_88         
+      0.0            52694          2      26347.0      26347.0      26321      26373         36.8  PushPop  :fsdp_wait_fwd_layer_213        
+      0.0            52692          2      26346.0      26346.0      24051      28641       3245.6  PushPop  :fsdp_wait_fwd_layer_125        
+      0.0            52663          2      26331.5      26331.5      20709      31954       7951.4  PushPop  :fsdp_wait_bwd_layer_93         
+      0.0            52653          2      26326.5      26326.5      24612      28041       2424.7  PushPop  :fsdp_wait_fwd_layer_60         
+      0.0            52562          2      26281.0      26281.0      21764      30798       6388.0  PushPop  :fsdp_wait_bwd_layer_34         
+      0.0            52562          2      26281.0      26281.0      23591      28971       3804.2  PushPop  :fsdp_wait_fwd_layer_35         
+      0.0            52558          2      26279.0      26279.0      23923      28635       3331.9  PushPop  :fsdp_wait_fwd_layer_70         
+      0.0            52554          2      26277.0      26277.0      25418      27136       1214.8  PushPop  :fsdp_wait_fwd_layer_150        
+      0.0            52353          2      26176.5      26176.5      26048      26305        181.7  PushPop  :fsdp_wait_fwd_layer_59         
+      0.0            52291          2      26145.5      26145.5      24544      27747       2264.9  PushPop  :fsdp_wait_bwd_layer_74         
+      0.0            52274          2      26137.0      26137.0      23257      29017       4072.9  PushPop  :fsdp_wait_fwd_layer_63         
+      0.0            52205          2      26102.5      26102.5      20723      31482       7607.8  PushPop  :fsdp_wait_bwd_layer_107        
+      0.0            52197          2      26098.5      26098.5      25591      26606        717.7  PushPop  :fsdp_wait_fwd_layer_17         
+      0.0            52083          2      26041.5      26041.5      25394      26689        915.7  PushPop  :fsdp_wait_fwd_layer_109        
+      0.0            52067          2      26033.5      26033.5      25113      26954       1301.8  PushPop  :fsdp_wait_bwd_layer_31         
+      0.0            52040          2      26020.0      26020.0      25186      26854       1179.5  PushPop  :fsdp_wait_fwd_layer_220        
+      0.0            52016          2      26008.0      26008.0      24404      27612       2268.4  PushPop  :fsdp_wait_bwd_layer_161        
+      0.0            51950          2      25975.0      25975.0      25621      26329        500.6  PushPop  :fsdp_wait_fwd_layer_52         
+      0.0            51910          2      25955.0      25955.0      21408      30502       6430.4  PushPop  :fsdp_wait_bwd_layer_41         
+      0.0            51900          2      25950.0      25950.0      25372      26528        817.4  PushPop  :fsdp_wait_fwd_layer_184        
+      0.0            51893          2      25946.5      25946.5      25269      26624        958.1  PushPop  :fsdp_wait_fwd_layer_149        
+      0.0            51892          2      25946.0      25946.0      25526      26366        594.0  PushPop  :fsdp_wait_fwd_layer_46         
+      0.0            51809          2      25904.5      25904.5      24774      27035       1598.8  PushPop  :fsdp_wait_bwd_layer_59         
+      0.0            51771          2      25885.5      25885.5      25783      25988        145.0  PushPop  :fsdp_wait_fwd_layer_199        
+      0.0            51747          2      25873.5      25873.5      25403      26344        665.4  PushPop  :fsdp_wait_bwd_layer_52         
+      0.0            51728          2      25864.0      25864.0      25846      25882         25.5  PushPop  :fsdp_wait_bwd_layer_157        
+      0.0            51678          2      25839.0      25839.0      24384      27294       2057.7  PushPop  :fsdp_wait_fwd_layer_190        
+      0.0            51660          2      25830.0      25830.0      25041      26619       1115.8  PushPop  :fsdp_wait_bwd_layer_224        
+      0.0            51615          2      25807.5      25807.5      23052      28563       3896.9  PushPop  :fsdp_wait_fwd_layer_91         
+      0.0            51601          2      25800.5      25800.5      25669      25932        186.0  PushPop  :fsdp_wait_bwd_layer_178        
+      0.0            51575          2      25787.5      25787.5      24813      26762       1378.2  PushPop  :fsdp_wait_fwd_layer_214        
+      0.0            51566          2      25783.0      25783.0      23109      28457       3781.6  PushPop  :fsdp_wait_bwd_layer_61         
+      0.0            51529          2      25764.5      25764.5      24779      26750       1393.7  PushPop  :fsdp_wait_fwd_layer_178        
+      0.0            51527          2      25763.5      25763.5      25516      26011        350.0  PushPop  :fsdp_wait_fwd_layer_101        
+      0.0            51416          2      25708.0      25708.0      23410      28006       3249.9  PushPop  :fsdp_wait_fwd_layer_111        
+      0.0            51324          2      25662.0      25662.0      25246      26078        588.3  PushPop  :fsdp_wait_bwd_layer_129        
+      0.0            51309          2      25654.5      25654.5      25104      26205        778.5  PushPop  :fsdp_wait_fwd_layer_72         
+      0.0            51306          2      25653.0      25653.0      23576      27730       2937.3  PushPop  :fsdp_wait_fwd_layer_84         
+      0.0            51293          2      25646.5      25646.5      24425      26868       1727.5  PushPop  :fsdp_wait_fwd_layer_99         
+      0.0            51281          2      25640.5      25640.5      25560      25721        113.8  PushPop  :fsdp_wait_fwd_layer_171        
+      0.0            51266          2      25633.0      25633.0      25596      25670         52.3  PushPop  :fsdp_wait_bwd_layer_150        
+      0.0            51237          2      25618.5      25618.5      25097      26140        737.5  PushPop  :fsdp_wait_fwd_layer_200        
+      0.0            51208          2      25604.0      25604.0      25248      25960        503.5  PushPop  :fsdp_wait_fwd_layer_30         
+      0.0            51192          2      25596.0      25596.0      25481      25711        162.6  PushPop  :fsdp_wait_fwd_layer_24         
+      0.0            51167          2      25583.5      25583.5      25321      25846        371.2  PushPop  :fsdp_wait_fwd_layer_185        
+      0.0            51157          2      25578.5      25578.5      25055      26102        740.3  PushPop  :fsdp_wait_fwd_layer_177        
+      0.0            51127          2      25563.5      25563.5      24948      26179        870.4  PushPop  :fsdp_wait_fwd_layer_6          
+      0.0            51113          2      25556.5      25556.5      24484      26629       1516.7  PushPop  :fsdp_wait_fwd_layer_12         
+      0.0            51108          2      25554.0      25554.0      24255      26853       1837.1  PushPop  :fsdp_wait_bwd_layer_133        
+      0.0            51103          2      25551.5      25551.5      25474      25629        109.6  PushPop  :fsdp_wait_fwd_layer_10         
+      0.0            51101          2      25550.5      25550.5      25146      25955        572.0  PushPop  :fsdp_wait_bwd_layer_164        
+      0.0            51094          2      25547.0      25547.0      25138      25956        578.4  PushPop  :fsdp_wait_bwd_layer_66         
+      0.0            51055          2      25527.5      25527.5      22243      28812       4645.0  PushPop  :fsdp_wait_bwd_layer_188        
+      0.0            51008          2      25504.0      25504.0      22980      28028       3569.5  PushPop  :fsdp_wait_fwd_layer_146        
+      0.0            51000          2      25500.0      25500.0      25491      25509         12.7  PushPop  :fsdp_wait_bwd_layer_3          
+      0.0            50946          2      25473.0      25473.0      23149      27797       3286.6  PushPop  :fsdp_wait_bwd_layer_131        
+      0.0            50940          2      25470.0      25470.0      23966      26974       2127.0  PushPop  :fsdp_wait_fwd_layer_90         
+      0.0            50908          2      25454.0      25454.0      25386      25522         96.2  PushPop  :fsdp_wait_bwd_layer_143        
+      0.0            50864          2      25432.0      25432.0      24976      25888        644.9  PushPop  :fsdp_wait_fwd_layer_11         
+      0.0            50864          2      25432.0      25432.0      25302      25562        183.8  PushPop  :fsdp_wait_fwd_layer_53         
+      0.0            50837          2      25418.5      25418.5      22705      28132       3837.5  PushPop  :fsdp_wait_fwd_layer_105        
+      0.0            50832          2      25416.0      25416.0      25336      25496        113.1  PushPop  :fsdp_wait_fwd_layer_207        
+      0.0            50781          2      25390.5      25390.5      25369      25412         30.4  PushPop  :fsdp_wait_bwd_layer_147        
+      0.0            50745          2      25372.5      25372.5      25008      25737        515.5  PushPop  :fsdp_wait_fwd_layer_36         
+      0.0            50736          2      25368.0      25368.0      24816      25920        780.6  PushPop  :fsdp_wait_fwd_layer_107        
+      0.0            50700          2      25350.0      25350.0      25346      25354          5.7  PushPop  :fsdp_wait_fwd_layer_38         
+      0.0            50683          2      25341.5      25341.5      24946      25737        559.3  PushPop  :fsdp_wait_fwd_layer_80         
+      0.0            50679          2      25339.5      25339.5      22374      28305       4193.9  PushPop  :fsdp_wait_bwd_layer_110        
+      0.0            50609          2      25304.5      25304.5      25036      25573        379.7  PushPop  :fsdp_wait_bwd_layer_136        
+      0.0            50565          2      25282.5      25282.5      25036      25529        348.6  PushPop  :fsdp_wait_fwd_layer_194        
+      0.0            50552          2      25276.0      25276.0      24514      26038       1077.6  PushPop  :fsdp_wait_bwd_layer_24         
+      0.0            50513          2      25256.5      25256.5      25004      25509        357.1  PushPop  :fsdp_wait_fwd_layer_158        
+      0.0            50507          2      25253.5      25253.5      25150      25357        146.4  PushPop  :fsdp_wait_bwd_layer_192        
+      0.0            50506          2      25253.0      25253.0      24319      26187       1320.9  PushPop  :fsdp_wait_bwd_layer_39         
+      0.0            50501          2      25250.5      25250.5      22819      27682       3438.7  PushPop  :fsdp_wait_fwd_layer_28         
+      0.0            50488          2      25244.0      25244.0      24585      25903        932.0  PushPop  :fsdp_wait_fwd_layer_193        
+      0.0            50487          2      25243.5      25243.5      24639      25848        854.9  PushPop  :fsdp_wait_fwd_layer_176        
+      0.0            50440          2      25220.0      25220.0      25118      25322        144.2  PushPop  :fsdp_wait_fwd_layer_151        
+      0.0            50420          2      25210.0      25210.0      23234      27186       2794.5  PushPop  :fsdp_wait_fwd_layer_139        
+      0.0            50418          2      25209.0      25209.0      24929      25489        396.0  PushPop  :fsdp_wait_bwd_layer_13         
+      0.0            50401          2      25200.5      25200.5      24542      25859        931.3  PushPop  :fsdp_wait_fwd_layer_92         
+      0.0            50386          2      25193.0      25193.0      24964      25422        323.9  PushPop  :fsdp_wait_fwd_layer_71         
+      0.0            50381          2      25190.5      25190.5      24830      25551        509.8  PushPop  :fsdp_wait_bwd_layer_80         
+      0.0            50368          2      25184.0      25184.0      24847      25521        476.6  PushPop  :fsdp_wait_bwd_layer_171        
+      0.0            50319          2      25159.5      25159.5      23619      26700       2178.6  PushPop  :fsdp_wait_bwd_layer_126        
+      0.0            50263          2      25131.5      25131.5      24398      25865       1037.3  PushPop  :fsdp_wait_fwd_layer_25         
+      0.0            50237          2      25118.5      25118.5      24964      25273        218.5  PushPop  :fsdp_wait_bwd_layer_10         
+      0.0            50163          2      25081.5      25081.5      24477      25686        854.9  PushPop  :fsdp_wait_fwd_layer_206        
+      0.0            50149          2      25074.5      25074.5      24399      25750        955.3  PushPop  :fsdp_wait_bwd_layer_122        
+      0.0            50126          2      25063.0      25063.0      24877      25249        263.0  PushPop  :fsdp_wait_fwd_layer_148        
+      0.0            50108          2      25054.0      25054.0      24589      25519        657.6  PushPop  :fsdp_wait_fwd_layer_102        
+      0.0            50053          2      25026.5      25026.5      24663      25390        514.1  PushPop  :fsdp_wait_fwd_layer_165        
+      0.0            50011          2      25005.5      25005.5      24937      25074         96.9  PushPop  :fsdp_wait_fwd_layer_212        
+      0.0            49994          2      24997.0      24997.0      24393      25601        854.2  PushPop  :fsdp_wait_bwd_layer_213        
+      0.0            49942          2      24971.0      24971.0      24838      25104        188.1  PushPop  :fsdp_wait_fwd_layer_26         
+      0.0            49937          2      24968.5      24968.5      24592      25345        532.5  PushPop  :fsdp_wait_bwd_layer_18         
+      0.0            49902          2      24951.0      24951.0      22387      27515       3626.0  PushPop  :fsdp_wait_bwd_layer_177        
+      0.0            49855          2      24927.5      24927.5      24675      25180        357.1  PushPop  :fsdp_wait_fwd_layer_68         
+      0.0            49830          2      24915.0      24915.0      24540      25290        530.3  PushPop  :fsdp_wait_fwd_layer_15         
+      0.0            49811          2      24905.5      24905.5      24792      25019        160.5  PushPop  :fsdp_wait_bwd_layer_144        
+      0.0            49806          2      24903.0      24903.0      24757      25049        206.5  PushPop  :fsdp_wait_fwd_layer_64         
+      0.0            49760          2      24880.0      24880.0      24085      25675       1124.3  PushPop  :fsdp_wait_bwd_layer_207        
+      0.0            49714          2      24857.0      24857.0      24575      25139        398.8  PushPop  :fsdp_wait_fwd_layer_222        
+      0.0            49708          2      24854.0      24854.0      24202      25506        922.1  PushPop  :fsdp_wait_bwd_layer_49         
+      0.0            49696          2      24848.0      24848.0      24802      24894         65.1  PushPop  :fsdp_wait_fwd_layer_152        
+      0.0            49691          2      24845.5      24845.5      24803      24888         60.1  PushPop  :fsdp_wait_bwd_layer_95         
+      0.0            49636          2      24818.0      24818.0      24500      25136        449.7  PushPop  :fsdp_wait_fwd_layer_183        
+      0.0            49602          2      24801.0      24801.0      22858      26744       2747.8  PushPop  :fsdp_wait_bwd_layer_208        
+      0.0            49592          2      24796.0      24796.0      24373      25219        598.2  PushPop  :fsdp_wait_bwd_layer_53         
+      0.0            49539          2      24769.5      24769.5      24536      25003        330.2  PushPop  :fsdp_wait_fwd_layer_57         
+      0.0            49509          2      24754.5      24754.5      24433      25076        454.7  PushPop  :fsdp_wait_fwd_layer_187        
+      0.0            49507          2      24753.5      24753.5      24708      24799         64.3  PushPop  :fsdp_wait_bwd_layer_17         
+      0.0            49493          2      24746.5      24746.5      21665      27828       4357.9  PushPop  :fsdp_wait_bwd_layer_197        
+      0.0            49432          2      24716.0      24716.0      23978      25454       1043.7  PushPop  :fsdp_wait_bwd_layer_214        
+      0.0            49431          2      24715.5      24715.5      23115      26316       2263.4  PushPop  :fsdp_wait_bwd_layer_183        
+      0.0            49401          2      24700.5      24700.5      24595      24806        149.2  PushPop  :fsdp_wait_fwd_layer_29         
+      0.0            49378          2      24689.0      24689.0      24338      25040        496.4  PushPop  :fsdp_wait_fwd_layer_211        
+      0.0            49370          2      24685.0      24685.0      24113      25257        808.9  PushPop  :fsdp_wait_fwd_layer_197        
+      0.0            49355          2      24677.5      24677.5      24439      24916        337.3  PushPop  :fsdp_wait_fwd_layer_19         
+      0.0            49351          2      24675.5      24675.5      24531      24820        204.4  PushPop  :fsdp_wait_fwd_layer_61         
+      0.0            49344          2      24672.0      24672.0      24189      25155        683.1  PushPop  :fsdp_wait_fwd_layer_169        
+      0.0            49341          2      24670.5      24670.5      24632      24709         54.4  PushPop  :fsdp_wait_fwd_layer_50         
+      0.0            49256          2      24628.0      24628.0      24523      24733        148.5  PushPop  :fsdp_wait_fwd_layer_45         
+      0.0            49227          2      24613.5      24613.5      24302      24925        440.5  PushPop  :fsdp_wait_fwd_layer_40         
+      0.0            49202          2      24601.0      24601.0      23966      25236        898.0  PushPop  :fsdp_wait_bwd_layer_130        
+      0.0            49182          2      24591.0      24591.0      24346      24836        346.5  PushPop  :fsdp_wait_fwd_layer_96         
+      0.0            49172          2      24586.0      24586.0      24523      24649         89.1  PushPop  :fsdp_wait_fwd_layer_179        
+      0.0            49136          2      24568.0      24568.0      23149      25987       2006.8  PushPop  :fsdp_wait_fwd_layer_118        
+      0.0            49132          2      24566.0      24566.0      24355      24777        298.4  PushPop  :fsdp_wait_fwd_layer_33         
+      0.0            49127          2      24563.5      24563.5      24471      24656        130.8  PushPop  :fsdp_wait_fwd_layer_155        
+      0.0            49100          2      24550.0      24550.0      24101      24999        635.0  PushPop  :fsdp_wait_fwd_layer_180        
+      0.0            49099          2      24549.5      24549.5      24418      24681        186.0  PushPop  :fsdp_wait_bwd_layer_0          
+      0.0            49075          2      24537.5      24537.5      23567      25508       1372.5  PushPop  :fsdp_wait_fwd_layer_218        
+      0.0            48982          2      24491.0      24491.0      24361      24621        183.8  PushPop  :fsdp_wait_fwd_layer_43         
+      0.0            48975          2      24487.5      24487.5      24422      24553         92.6  PushPop  :fsdp_wait_fwd_layer_215        
+      0.0            48936          2      24468.0      24468.0      23373      25563       1548.6  PushPop  :fsdp_wait_bwd_layer_77         
+      0.0            48853          2      24426.5      24426.5      24281      24572        205.8  PushPop  :fsdp_wait_fwd_layer_42         
+      0.0            48851          2      24425.5      24425.5      21083      27768       4727.0  PushPop  :fsdp_wait_bwd_layer_83         
+      0.0            48802          2      24401.0      24401.0      24006      24796        558.6  PushPop  :fsdp_wait_fwd_layer_76         
+      0.0            48793          2      24396.5      24396.5      24372      24421         34.6  PushPop  :fsdp_wait_bwd_layer_140        
+      0.0            48785          2      24392.5      24392.5      23552      25233       1188.6  PushPop  :fsdp_wait_bwd_layer_91         
+      0.0            48761          2      24380.5      24380.5      23940      24821        623.0  PushPop  :fsdp_wait_bwd_layer_109        
+      0.0            48757          2      24378.5      24378.5      21787      26970       3664.9  PushPop  :fsdp_wait_bwd_layer_211        
+      0.0            48716          2      24358.0      24358.0      24047      24669        439.8  PushPop  :fsdp_wait_fwd_layer_159        
+      0.0            48680          2      24340.0      24340.0      24328      24352         17.0  PushPop  :fsdp_wait_fwd_layer_208        
+      0.0            48603          2      24301.5      24301.5      23862      24741        621.5  PushPop  :fsdp_wait_bwd_layer_63         
+      0.0            48558          2      24279.0      24279.0      23501      25057       1100.3  PushPop  :fsdp_wait_fwd_layer_14         
+      0.0            48538          2      24269.0      24269.0      23482      25056       1113.0  PushPop  :fsdp_wait_fwd_layer_69         
+      0.0            48519          2      24259.5      24259.5      23509      25010       1061.4  PushPop  :fsdp_wait_bwd_layer_123        
+      0.0            48500          2      24250.0      24250.0      23975      24525        388.9  PushPop  :fsdp_wait_fwd_layer_173        
+      0.0            48498          2      24249.0      24249.0      24146      24352        145.7  PushPop  :fsdp_wait_bwd_layer_28         
+      0.0            48490          2      24245.0      24245.0      24243      24247          2.8  PushPop  :fsdp_wait_fwd_layer_112        
+      0.0            48482          2      24241.0      24241.0      24224      24258         24.0  PushPop  :fsdp_wait_fwd_layer_119        
+      0.0            48456          2      24228.0      24228.0      24037      24419        270.1  PushPop  :fsdp_wait_bwd_layer_21         
+      0.0            48446          2      24223.0      24223.0      24013      24433        297.0  PushPop  :fsdp_wait_bwd_layer_46         
+      0.0            48409          2      24204.5      24204.5      24193      24216         16.3  PushPop  :fsdp_wait_bwd_layer_67         
+      0.0            48408          2      24204.0      24204.0      23868      24540        475.2  PushPop  :fsdp_wait_bwd_layer_102        
+      0.0            48398          2      24199.0      24199.0      24193      24205          8.5  PushPop  :fsdp_wait_bwd_layer_217        
+      0.0            48389          2      24194.5      24194.5      23603      24786        836.5  PushPop  :fsdp_wait_bwd_layer_7          
+      0.0            48304          2      24152.0      24152.0      24103      24201         69.3  PushPop  :fsdp_wait_fwd_layer_34         
+      0.0            48296          2      24148.0      24148.0      21591      26705       3616.1  PushPop  :fsdp_wait_bwd_layer_114        
+      0.0            48292          2      24146.0      24146.0      24139      24153          9.9  PushPop  :fsdp_wait_fwd_layer_7          
+      0.0            48252          2      24126.0      24126.0      23826      24426        424.3  PushPop  :fsdp_wait_bwd_layer_221        
+      0.0            48209          2      24104.5      24104.5      23958      24251        207.2  PushPop  :fsdp_wait_bwd_layer_210        
+      0.0            48189          2      24094.5      24094.5      23740      24449        501.3  PushPop  :fsdp_wait_fwd_layer_62         
+      0.0            48181          2      24090.5      24090.5      23878      24303        300.5  PushPop  :fsdp_wait_bwd_layer_112        
+      0.0            48179          2      24089.5      24089.5      23852      24327        335.9  PushPop  :fsdp_wait_bwd_layer_154        
+      0.0            48176          2      24088.0      24088.0      23893      24283        275.8  PushPop  :fsdp_wait_bwd_layer_11         
+      0.0            48167          2      24083.5      24083.5      23945      24222        195.9  PushPop  :fsdp_wait_bwd_layer_196        
+      0.0            48144          2      24072.0      24072.0      23960      24184        158.4  PushPop  :fsdp_wait_fwd_layer_225        
+      0.0            48124          2      24062.0      24062.0      24051      24073         15.6  PushPop  :fsdp_wait_bwd_layer_193        
+      0.0            48080          2      24040.0      24040.0      21474      26606       3628.9  PushPop  :fsdp_wait_bwd_layer_55         
+      0.0            48059          2      24029.5      24029.5      23440      24619        833.7  PushPop  :fsdp_wait_fwd_layer_147        
+      0.0            47915          2      23957.5      23957.5      22983      24932       1378.2  PushPop  :fsdp_wait_fwd_layer_154        
+      0.0            47892          2      23946.0      23946.0      23822      24070        175.4  PushPop  :fsdp_wait_bwd_layer_203        
+      0.0            47888          2      23944.0      23944.0      23811      24077        188.1  PushPop  :fsdp_wait_fwd_layer_55         
+      0.0            47887          2      23943.5      23943.5      23494      24393        635.7  PushPop  :fsdp_wait_fwd_layer_224        
+      0.0            47808          2      23904.0      23904.0      23662      24146        342.2  PushPop  :fsdp_wait_bwd_layer_35         
+      0.0            47807          2      23903.5      23903.5      23536      24271        519.7  PushPop  :fsdp_wait_bwd_layer_14         
+      0.0            47776          2      23888.0      23888.0      23705      24071        258.8  PushPop  :fsdp_wait_bwd_layer_42         
+      0.0            47762          2      23881.0      23881.0      22325      25437       2200.5  PushPop  :fsdp_wait_bwd_layer_12         
+      0.0            47706          2      23853.0      23853.0      23756      23950        137.2  PushPop  :fsdp_wait_bwd_layer_56         
+      0.0            47641          2      23820.5      23820.5      23637      24004        259.5  PushPop  :fsdp_wait_bwd_layer_60         
+      0.0            47527          2      23763.5      23763.5      23308      24219        644.2  PushPop  :fsdp_wait_fwd_layer_195        
+      0.0            47484          2      23742.0      23742.0      23722      23762         28.3  PushPop  :fsdp_wait_bwd_layer_84         
+      0.0            47475          2      23737.5      23737.5      23453      24022        402.3  PushPop  :fsdp_wait_fwd_layer_27         
+      0.0            47468          2      23734.0      23734.0      23628      23840        149.9  PushPop  :fsdp_wait_bwd_layer_165        
+      0.0            47453          2      23726.5      23726.5      23611      23842        163.3  PushPop  :fsdp_wait_bwd_layer_32         
+      0.0            47449          2      23724.5      23724.5      23620      23829        147.8  PushPop  :fsdp_wait_fwd_layer_56         
+      0.0            47437          2      23718.5      23718.5      23411      24026        434.9  PushPop  :fsdp_wait_fwd_layer_21         
+      0.0            47411          2      23705.5      23705.5      23349      24062        504.2  PushPop  :fsdp_wait_bwd_layer_88         
+      0.0            47284          2      23642.0      23642.0      23362      23922        396.0  PushPop  :fsdp_wait_fwd_layer_83         
+      0.0            47248          2      23624.0      23624.0      22934      24314        975.8  PushPop  :fsdp_wait_bwd_layer_97         
+      0.0            47232          2      23616.0      23616.0      23476      23756        198.0  PushPop  :fsdp_wait_fwd_layer_175        
+      0.0            47122          2      23561.0      23561.0      23321      23801        339.4  PushPop  :fsdp_wait_fwd_layer_196        
+      0.0            47108          2      23554.0      23554.0      23054      24054        707.1  PushPop  :fsdp_wait_bwd_layer_124        
+      0.0            47014          2      23507.0      23507.0      22133      24881       1943.1  PushPop  :fsdp_wait_bwd_layer_202        
+      0.0            47008          2      23504.0      23504.0      23388      23620        164.0  PushPop  :fsdp_wait_fwd_layer_202        
+      0.0            46894          2      23447.0      23447.0      23395      23499         73.5  PushPop  :fsdp_wait_fwd_layer_153        
+      0.0            46880          2      23440.0      23440.0      23417      23463         32.5  PushPop  :fsdp_wait_fwd_layer_160        
+      0.0            46843          2      23421.5      23421.5      23191      23652        326.0  PushPop  :fsdp_wait_bwd_layer_40         
+      0.0            46711          2      23355.5      23355.5      23336      23375         27.6  PushPop  :fsdp_wait_fwd_layer_182        
+      0.0            46515          2      23257.5      23257.5      23039      23476        309.0  PushPop  :fsdp_wait_fwd_layer_49         
+      0.0            46501          2      23250.5      23250.5      22394      24107       1211.3  PushPop  :fsdp_wait_bwd_layer_5          
+      0.0            46491          2      23245.5      23245.5      22535      23956       1004.8  PushPop  :fsdp_wait_bwd_layer_69         
+      0.0            46485          2      23242.5      23242.5      23103      23382        197.3  PushPop  :fsdp_wait_fwd_layer_216        
+      0.0            46458          2      23229.0      23229.0      23142      23316        123.0  PushPop  :fsdp_wait_fwd_layer_77         
+      0.0            46452          2      23226.0      23226.0      23206      23246         28.3  PushPop  :fsdp_wait_fwd_layer_168        
+      0.0            46438          2      23219.0      23219.0      22390      24048       1172.4  PushPop  :fsdp_wait_bwd_layer_209        
+      0.0            46371          2      23185.5      23185.5      22820      23551        516.9  PushPop  :fsdp_wait_fwd_layer_181        
+      0.0            46339          2      23169.5      23169.5      22971      23368        280.7  PushPop  :fsdp_wait_fwd_layer_188        
+      0.0            46312          2      23156.0      23156.0      22522      23790        896.6  PushPop  :fsdp_wait_bwd_layer_54         
+      0.0            46281          2      23140.5      23140.5      22656      23625        685.2  PushPop  :fsdp_wait_fwd_layer_189        
+      0.0            46275          2      23137.5      23137.5      22666      23609        666.8  PushPop  :fsdp_wait_bwd_layer_104        
+      0.0            46274          2      23137.0      23137.0      22760      23514        533.2  PushPop  :fsdp_wait_bwd_layer_159        
+      0.0            46196          2      23098.0      23098.0      23044      23152         76.4  PushPop  :fsdp_wait_bwd_layer_103        
+      0.0            46193          2      23096.5      23096.5      22515      23678        822.4  PushPop  :fsdp_wait_bwd_layer_152        
+      0.0            46191          2      23095.5      23095.5      22779      23412        447.6  PushPop  :fsdp_wait_bwd_layer_75         
+      0.0            46076          2      23038.0      23038.0      22751      23325        405.9  PushPop  :fsdp_wait_fwd_layer_41         
+      0.0            45966          2      22983.0      22983.0      22852      23114        185.3  PushPop  :fsdp_wait_bwd_layer_132        
+      0.0            45957          2      22978.5      22978.5      22531      23426        632.9  PushPop  :fsdp_wait_bwd_layer_176        
+      0.0            45956          2      22978.0      22978.0      22607      23349        524.7  PushPop  :fsdp_wait_bwd_layer_33         
+      0.0            45895          2      22947.5      22947.5      22156      23739       1119.4  PushPop  :fsdp_wait_bwd_layer_117        
+      0.0            45870          2      22935.0      22935.0      22831      23039        147.1  PushPop  :fsdp_wait_bwd_layer_145        
+      0.0            45841          2      22920.5      22920.5      22774      23067        207.2  PushPop  :fsdp_wait_bwd_layer_180        
+      0.0            45828          2      22914.0      22914.0      22226      23602        973.0  PushPop  :fsdp_wait_bwd_layer_201        
+      0.0            45806          2      22903.0      22903.0      22277      23529        885.3  PushPop  :fsdp_wait_bwd_layer_26         
+      0.0            45795          2      22897.5      22897.5      22620      23175        392.4  PushPop  :fsdp_wait_fwd_layer_217        
+      0.0            45758          2      22879.0      22879.0      21961      23797       1298.2  PushPop  :fsdp_wait_bwd_layer_48         
+      0.0            45756          2      22878.0      22878.0      22574      23182        429.9  PushPop  :fsdp_wait_fwd_layer_210        
+      0.0            45687          2      22843.5      22843.5      22204      23483        904.4  PushPop  :fsdp_wait_bwd_layer_215        
+      0.0            45687          2      22843.5      22843.5      22752      22935        129.4  PushPop  :fsdp_wait_bwd_layer_222        
+      0.0            45639          2      22819.5      22819.5      21900      23739       1300.4  PushPop  :fsdp_wait_bwd_layer_156        
+      0.0            45585          2      22792.5      22792.5      21914      23671       1242.4  PushPop  :fsdp_wait_bwd_layer_47         
+      0.0            45576          2      22788.0      22788.0      22613      22963        247.5  PushPop  :fsdp_wait_bwd_layer_173        
+      0.0            45567          2      22783.5      22783.5      22309      23258        671.0  PushPop  :fsdp_wait_fwd_layer_161        
+      0.0            45463          2      22731.5      22731.5      22138      23325        839.3  PushPop  :fsdp_wait_bwd_layer_155        
+      0.0            45431          2      22715.5      22715.5      22708      22723         10.6  PushPop  :fsdp_wait_bwd_layer_89         
+      0.0            45394          2      22697.0      22697.0      22401      22993        418.6  PushPop  :fsdp_wait_bwd_layer_82         
+      0.0            45377          2      22688.5      22688.5      22576      22801        159.1  PushPop  :fsdp_wait_bwd_layer_90         
+      0.0            45340          2      22670.0      22670.0      21409      23931       1783.3  PushPop  :fsdp_wait_bwd_layer_125        
+      0.0            45301          2      22650.5      22650.5      21735      23566       1294.7  PushPop  :fsdp_wait_bwd_layer_194        
+      0.0            45278          2      22639.0      22639.0      22118      23160        736.8  PushPop  :fsdp_wait_bwd_layer_167        
+      0.0            44965          2      22482.5      22482.5      21655      23310       1170.3  PushPop  :fsdp_wait_bwd_layer_16         
+      0.0            44910          2      22455.0      22455.0      22205      22705        353.6  PushPop  :fsdp_wait_bwd_layer_153        
+      0.0            44910          2      22455.0      22455.0      22281      22629        246.1  PushPop  :fsdp_wait_bwd_layer_76         
+      0.0            44896          2      22448.0      22448.0      21881      23015        801.9  PushPop  :fsdp_wait_bwd_layer_118        
+      0.0            44894          2      22447.0      22447.0      22032      22862        586.9  PushPop  :fsdp_wait_bwd_layer_134        
+      0.0            44890          2      22445.0      22445.0      22330      22560        162.6  PushPop  :fsdp_wait_bwd_layer_139        
+      0.0            44866          2      22433.0      22433.0      22426      22440          9.9  PushPop  :fsdp_wait_bwd_layer_146        
+      0.0            44839          2      22419.5      22419.5      22240      22599        253.9  PushPop  :fsdp_wait_bwd_layer_138        
+      0.0            44791          2      22395.5      22395.5      21720      23071        955.3  PushPop  :fsdp_wait_bwd_layer_181        
+      0.0            44782          2      22391.0      22391.0      20851      23931       2177.9  PushPop  :fsdp_wait_bwd_layer_6          
+      0.0            44765          2      22382.5      22382.5      22280      22485        145.0  PushPop  :fsdp_wait_bwd_layer_19         
+      0.0            44748          2      22374.0      22374.0      22048      22700        461.0  PushPop  :fsdp_wait_bwd_layer_23         
+      0.0            44740          2      22370.0      22370.0      21757      22983        866.9  PushPop  :fsdp_wait_bwd_layer_64         
+      0.0            44696          2      22348.0      22348.0      22320      22376         39.6  PushPop  :fsdp_wait_bwd_layer_96         
+      0.0            44694          2      22347.0      22347.0      21867      22827        678.8  PushPop  :fsdp_wait_bwd_layer_121        
+      0.0            44645          2      22322.5      22322.5      21854      22791        662.6  PushPop  :fsdp_wait_bwd_layer_223        
+      0.0            44631          2      22315.5      22315.5      21753      22878        795.5  PushPop  :fsdp_wait_bwd_layer_204        
+      0.0            44487          2      22243.5      22243.5      21210      23277       1461.6  PushPop  :fsdp_wait_bwd_layer_120        
+      0.0            44482          2      22241.0      22241.0      22200      22282         58.0  PushPop  :fsdp_wait_bwd_layer_174        
+      0.0            44469          2      22234.5      22234.5      21762      22707        668.2  PushPop  :fsdp_wait_bwd_layer_166        
+      0.0            44323          2      22161.5      22161.5      22129      22194         46.0  PushPop  :fsdp_wait_bwd_layer_216        
+      0.0            44316          2      22158.0      22158.0      21741      22575        589.7  PushPop  :fsdp_wait_bwd_layer_68         
+      0.0            44315          2      22157.5      22157.5      22064      22251        132.2  PushPop  :fsdp_wait_bwd_layer_160        
+      0.0            44246          2      22123.0      22123.0      21290      22956       1178.0  PushPop  :fsdp_wait_bwd_layer_113        
+      0.0            44169          2      22084.5      22084.5      21251      22918       1178.7  PushPop  :fsdp_wait_bwd_layer_9          
+      0.0            44110          2      22055.0      22055.0      21720      22390        473.8  PushPop  :fsdp_wait_bwd_layer_162        
+      0.0            43969          2      21984.5      21984.5      21922      22047         88.4  PushPop  :fsdp_wait_bwd_layer_142        
+      0.0            43930          2      21965.0      21965.0      20921      23009       1476.4  PushPop  :fsdp_wait_bwd_layer_191        
+      0.0            43910          2      21955.0      21955.0      21599      22311        503.5  PushPop  :fsdp_wait_bwd_layer_128        
+      0.0            43881          2      21940.5      21940.5      21829      22052        157.7  PushPop  :fsdp_wait_bwd_layer_85         
+      0.0            43767          2      21883.5      21883.5      21868      21899         21.9  PushPop  :fsdp_wait_bwd_layer_27         
+      0.0            43664          2      21832.0      21832.0      21292      22372        763.7  PushPop  :fsdp_wait_bwd_layer_57         
+      0.0            43595          2      21797.5      21797.5      21765      21830         46.0  PushPop  :fsdp_wait_bwd_layer_1          
+      0.0            43573          2      21786.5      21786.5      20655      22918       1600.2  PushPop  :fsdp_wait_bwd_layer_62         
+      0.0            43567          2      21783.5      21783.5      21598      21969        262.3  PushPop  :fsdp_wait_bwd_layer_218        
+      0.0            43544          2      21772.0      21772.0      21124      22420        916.4  PushPop  :fsdp_wait_bwd_layer_111        
+      0.0            43525          2      21762.5      21762.5      21162      22363        849.2  PushPop  :fsdp_wait_bwd_layer_190        
+      0.0            43422          2      21711.0      21711.0      21282      22140        606.7  PushPop  :fsdp_wait_bwd_layer_29         
+      0.0            43391          2      21695.5      21695.5      21231      22160        656.9  PushPop  :fsdp_wait_bwd_layer_8          
+      0.0            43387          2      21693.5      21693.5      20850      22537       1192.9  PushPop  :fsdp_wait_bwd_layer_37         
+      0.0            43355          2      21677.5      21677.5      21397      21958        396.7  PushPop  :fsdp_wait_bwd_layer_141        
+      0.0            43343          2      21671.5      21671.5      21610      21733         87.0  PushPop  :fsdp_wait_bwd_layer_20         
+      0.0            43315          2      21657.5      21657.5      20963      22352        982.2  PushPop  :fsdp_wait_bwd_layer_72         
+      0.0            43262          2      21631.0      21631.0      21219      22043        582.7  PushPop  :fsdp_wait_bwd_layer_195        
+      0.0            43228          2      21614.0      21614.0      21062      22166        780.6  PushPop  :fsdp_wait_bwd_layer_36         
+      0.0            43222          2      21611.0      21611.0      21109      22113        709.9  PushPop  :fsdp_wait_bwd_layer_219        
+      0.0            43157          2      21578.5      21578.5      20962      22195        871.9  PushPop  :fsdp_wait_bwd_layer_198        
+      0.0            43148          2      21574.0      21574.0      21534      21614         56.6  PushPop  :fsdp_wait_bwd_layer_30         
+      0.0            43137          2      21568.5      21568.5      21309      21828        367.0  PushPop  :fsdp_wait_bwd_layer_43         
+      0.0            42979          2      21489.5      21489.5      20880      22099        862.0  PushPop  :fsdp_wait_bwd_layer_22         
+      0.0            42946          2      21473.0      21473.0      21322      21624        213.5  PushPop  :fsdp_wait_bwd_layer_15         
+      0.0            42821          2      21410.5      21410.5      21118      21703        413.7  PushPop  :fsdp_wait_bwd_layer_163        
+      0.0            42717          2      21358.5      21358.5      21159      21558        282.1  PushPop  :fsdp_wait_bwd_layer_127        
+      0.0            42542          2      21271.0      21271.0      21170      21372        142.8  PushPop  :fsdp_wait_bwd_layer_78         
+      0.0            42495          2      21247.5      21247.5      20846      21649        567.8  PushPop  :fsdp_wait_bwd_layer_86         
+      0.0            42286          2      21143.0      21143.0      20900      21386        343.7  PushPop  :fsdp_wait_bwd_layer_65         
+      0.0            42275          2      21137.5      21137.5      20829      21446        436.3  PushPop  :fsdp_wait_bwd_layer_44         
+      0.0            41959          2      20979.5      20979.5      20342      21617        901.6  PushPop  :fsdp_wait_bwd_layer_205        
+      0.0            41944          2      20972.0      20972.0      20932      21012         56.6  PushPop  :fsdp_wait_bwd_layer_58         
+      0.0            41274          2      20637.0      20637.0      20527      20747        155.6  PushPop  :fsdp_wait_bwd_layer_79         
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/osrt_sum.py]... 
+
+ ** OS Runtime Summary (osrt_sum):
+
+ Time (%)  Total Time (ns)  Num Calls   Avg (ns)     Med (ns)    Min (ns)   Max (ns)   StdDev (ns)           Name         
+ --------  ---------------  ---------  -----------  -----------  ---------  ---------  -----------  ----------------------
+     65.9       4606205493         22  209372977.0  100186710.0  100141546  500625894  182516382.5  poll                  
+     22.9       1601487397         16  100092962.3  100091946.0  100080697  100104181       6898.0  pthread_cond_timedwait
+     11.1        778081512          2  389040756.0  389040756.0  385826449  392255063    4545716.6  pthread_cond_wait     
+      0.1          4357697         15     290513.1     323938.0       1162     673883     238221.4  pthread_mutex_lock    
+      0.0          2169548         96      22599.5      18755.0       1113      68272      12425.8  pthread_rwlock_wrlock 
+      0.0           424790         13      32676.2      34076.0      11520      49796       9355.9  pthread_rwlock_rdlock 
+      0.0           152642         14      10903.0      13567.0       2610      18514       6481.4  pthread_cond_signal   
+      0.0            12255          2       6127.5       6127.5       3169       9086       4184.0  pthread_cond_broadcast
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/cuda_api_sum.py]... 
+
+ ** CUDA API Summary (cuda_api_sum):
+
+ Time (%)  Total Time (ns)  Num Calls   Avg (ns)    Med (ns)   Min (ns)  Max (ns)  StdDev (ns)                 Name               
+ --------  ---------------  ---------  ----------  ----------  --------  --------  -----------  ----------------------------------
+     35.6        167227111          2  83613555.5  83613555.5  69091434  98135677   20537381.2  cudaDeviceSynchronize             
+     20.5         96527654      10002      9650.8      8070.5      4557   1679699      19420.3  cudaLaunchKernel                  
+      9.1         42831202       2844     15060.2     15257.0      7539     58143       5873.3  cudaMemcpyAsync                   
+      6.7         31306779      14157      2211.4      1790.0       510    963136      11309.9  cudaEventQuery                    
+      6.2         29189646          1  29189646.0  29189646.0  29189646  29189646          0.0  cudaProfilerStop                  
+      4.9         22996482       1734     13262.1     14269.0      6612     65566       5328.8  cuLaunchKernel                    
+      4.8         22644586       1488     15218.1     16710.5      8218    106104       6286.9  cuLaunchKernelEx                  
+      4.2         19560498      10736      1822.0      1199.5       629     60868       1975.3  cudaEventRecord                   
+      2.5         11979828       5952      2012.7      1757.0       733     25023       1452.7  cudaStreamWaitEvent               
+      1.4          6387119       3014      2119.2      1701.0       574     85128       4006.4  cudaEventCreateWithFlags          
+      1.3          6240990       2974      2098.5      1292.5       441     72028       4980.5  cudaEventDestroy                  
+      0.7          3231391          2   1615695.5   1615695.5      6793   3224598    2275331.7  cudaStreamSynchronize             
+      0.6          2719965       1490      1825.5      1722.0       853     12091        542.6  cudaStreamIsCapturing_v10000      
+      0.5          2497187        260      9604.6      8986.5      8235     36087       2938.1  cudaMemsetAsync                   
+      0.4          2102240       1734      1212.4      1303.5       408     20121        787.9  cuKernelGetFunction               
+      0.4          1853210       1488      1245.4      1217.0       698     25125        736.3  cudaStreamGetCaptureInfo_v2_v11030
+      0.2           823798       1488       553.6       546.0       291      7336        221.9  cudaGetFuncBySymbol_v11000        
+      0.0            35370          2     17685.0     17685.0     13116     22254       6461.5  cuProfilerStart                   
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/cuda_gpu_kern_sum.py]... 
+
+ ** CUDA GPU Kernel Summary (cuda_gpu_kern_sum):
+
+ Time (%)  Total Time (ns)  Instances  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)                                                  Name                                                
+ --------  ---------------  ---------  --------  --------  --------  --------  -----------  ----------------------------------------------------------------------------------------------------
+     27.1        410743736        904  454362.5  417120.0    124896   4250513     459820.9  ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<(unsigned long)4096>)                      
+     10.4        158254154        450  351675.9  272191.5    132001    574785     140656.1  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x128_32x3_nn_align4>(T1::Params)             
+      9.0        136068445        450  302374.3  218368.5    131168    990748     193057.6  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x128_32x3_tn_align4>(T1::Params)             
+      8.7        131903863        452  291822.7  170623.5    112992   2007481     256276.2  ncclDevKernel_ReduceScatter_Sum_f32_RING_LL(ncclDevKernelArgsStorage<(unsigned long)4096>)          
+      6.4         97648833        962  101506.1   20224.0     12000    465279     125854.0  void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::n…
+      4.0         61287014        130  471438.6  469872.5    464735    696769      20250.0  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x128_32x3_nt_align4>(T1::Params)             
+      3.4         52252687       1032   50632.4   20032.0      1856    120896      40672.2  void at::native::vectorized_elementwise_kernel<(int)4, at::native::BinaryFunctor<float, float, floa…
+      2.4         35986810        256  140573.5  124319.5    118496    283392      37343.6  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x128_16x4_nt_align4>(T1::Params)             
+      2.4         35796397        328  109135.4  109711.5     49951    119232       6983.4  void at::native::<unnamed>::multi_tensor_apply_kernel<at::native::<unnamed>::TensorListMetadata<(in…
+      2.2         32755441        164  199728.3  200480.0     95232    211104      11753.0  void at::native::<unnamed>::multi_tensor_apply_kernel<at::native::<unnamed>::TensorListScalarListMe…
+      2.1         32270289         64  504223.3  460111.5    439166    652608      67856.9  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x128_16x5_nt_align4>(T1::Params)             
+      1.7         26114137        256  102008.3  104096.0     92000    122047       4705.9  void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::n…
+      1.7         25833698       1222   21140.5   13696.0      5600    121983      27840.8  void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctor_add<float>, at::deta…
+      1.7         25505723        164  155522.7  156479.5     73535    163103       9485.9  void at::native::<unnamed>::multi_tensor_apply_kernel<at::native::<unnamed>::TensorListMetadata<(in…
+      1.7         25287515        164  154192.2  154975.5     72928    164064       9337.2  void at::native::<unnamed>::multi_tensor_apply_kernel<at::native::<unnamed>::TensorListMetadata<(in…
+      1.5         23224421        710   32710.5   10400.0      1792     81824      29059.5  void at::native::vectorized_elementwise_kernel<(int)4, at::native::BUnaryFunctor<float, float, floa…
+      1.3         19052480        132  144337.0   91503.5      8960   3288981     323130.6  ncclDevKernel_AllReduce_Sum_f32_RING_LL(ncclDevKernelArgsStorage<(unsigned long)4096>)              
+      1.2         18683084       1546   12084.8   12224.0      7232     59328       2892.3  void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::n…
+      1.2         18266757        164  111382.7  112047.5     52736    119135       6911.0  void at::native::<unnamed>::multi_tensor_apply_kernel<at::native::<unnamed>::TensorListScalarListMe…
+      1.2         17967943        164  109560.6  109983.5     51296    119743       6752.6  void at::native::<unnamed>::multi_tensor_apply_kernel<at::native::<unnamed>::TensorListMetadata<(in…
+      1.2         17932230        164  109342.9  110000.0     52160    117280       6753.3  void at::native::<unnamed>::multi_tensor_apply_kernel<at::native::<unnamed>::TensorListMetadata<(in…
+      0.9         13526796        328   41240.2   55088.0     17024     69024      19238.8  void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<float, at::native::func_wrapp…
+      0.8         12856491        128  100441.3   96016.0     95264    125376       8545.5  void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::n…
+      0.8         11816911        132   89522.1   86064.0     60128    129568      10187.9  void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::n…
+      0.7         10081392        136   74127.9   73856.0     45696     78848       6222.4  void at::native::vectorized_elementwise_kernel<(int)4, at::native::neg_kernel_cuda(at::TensorIterat…
+      0.6          9200336        128   71877.6   70000.0     68128     94527       4669.9  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x64_16x4_tn_align4>(T1::Params)              
+      0.6          8784631        128   68629.9   68239.5     66528     77472       1679.2  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x64_16x6_nn_align4>(T1::Params)              
+      0.3          5030971         66   76226.8   74335.5     59488     93760       4929.5  void at::native::vectorized_elementwise_kernel<(int)4, at::native::exp_kernel_cuda(at::TensorIterat…
+      0.3          4869113        192   25360.0   24480.0     22304     30752       2776.6  void at::native::<unnamed>::CatArrayBatchedCopy<at::native::<unnamed>::OpaqueType<(unsigned int)4>,…
+      0.3          4795805         64   74934.5   74880.0     72256     78816       1505.7  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_256x64_16x4_nt_align4>(T1::Params)              
+      0.3          4661148         64   72830.4   72784.0     72064     73888        479.1  void at::native::vectorized_elementwise_kernel<(int)4, at::native::sigmoid_backward_kernel_cuda(at:…
+      0.3          4630775         66   70163.3   65808.0     41248     91936       7561.9  void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<float, at::native::MaxOps<flo…
+      0.3          4284025         64   66937.9   66816.0     66208     71648        844.9  void cutlass::Kernel2<cutlass_80_tensorop_s1688gemm_128x64_16x6_nt_align4>(T1::Params)              
+      0.2          3711163         64   57986.9   50352.0     43712     77024      11336.6  void at::native::vectorized_elementwise_kernel<(int)4, at::native::sigmoid_kernel_cuda(at::TensorIt…
+      0.2          2820572        204   13826.3    1984.0      1376     52320      16419.8  void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<float>, at::detail::…
+      0.1          1825244        132   13827.6   10943.5      4064     36320       5421.4  void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<float, at::native::MeanOps<fl…
+      0.1          1608281        130   12371.4    8352.0      7648     32288       6672.3  void at::native::vectorized_elementwise_kernel<(int)4, void at::native::<unnamed>::pow_tensor_scala…
+      0.1          1570176        130   12078.3   12096.0     11520     12608        235.1  void at::native::reduce_kernel<(int)128, (int)4, at::native::ReduceOp<float, at::native::func_wrapp…
+      0.1          1376478        132   10427.9   10528.0      2656     10720        963.0  void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::n…
+      0.1          1298720        260    4995.1    4784.0      1888      8576       3052.1  void at::native::vectorized_elementwise_kernel<(int)4, at::native::AUnaryFunctor<float, float, floa…
+      0.1          1293439        128   10105.0   10112.0      9536     10720        394.6  void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::n…
+      0.1           934943         64   14608.5   14592.0     14368     14912        120.2  void at::native::<unnamed>::CatArrayBatchedCopy_aligned16_contig<at::native::<unnamed>::OpaqueType<…
+      0.0           590175         66    8942.0    8896.0      7136     10944        435.3  void at::native::_scatter_gather_elementwise_kernel<(int)128, (int)4, void at::native::_cuda_scatte…
+      0.0           301536        130    2319.5    2048.0      1696      9792        953.7  void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<float>, at…
+      0.0           288095        130    2216.1    2240.0      1920      2464        112.7  void at::native::vectorized_elementwise_kernel<(int)4, void at::native::<unnamed>::pow_tensor_scala…
+      0.0           283136         64    4424.0    4384.0      4224      4640        108.2  void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::n…
+      0.0           272416        130    2095.5    1984.0      1600      9920        778.1  void at::native::vectorized_elementwise_kernel<(int)4, at::native::rsqrt_kernel_cuda(at::TensorIter…
+      0.0           126208         66    1912.2    1920.0      1792      2112         78.8  void <unnamed>::elementwise_kernel_with_index<int, at::native::arange_cuda_out(const c10::Scalar &,…
+      0.0            57568          2   28784.0   28784.0     28640     28928        203.6  void at::native::index_elementwise_kernel<(int)128, (int)4, void at::native::gpu_index_kernel<void …
+      0.0            44928          2   22464.0   22464.0     21760     23168        995.6  void <unnamed>::indexing_backward_kernel<float, (int)4>(const long *, const long *, const T1 *, T1 …
+      0.0            18272          2    9136.0    9136.0      9120      9152         22.6  void at_cuda_detail::cub::DeviceRadixSortSingleTileKernel<at_cuda_detail::cub::DeviceRadixSortPolic…
+      0.0            16064          2    8032.0    8032.0      7648      8416        543.1  void at::native::_scatter_gather_elementwise_kernel<(int)128, (int)4, void at::native::_cuda_scatte…
+      0.0            13823          2    6911.5    6911.5      6752      7071        225.6  void at::native::_scatter_gather_elementwise_kernel<(int)128, (int)4, void at::native::_cuda_scatte…
+      0.0             8640          2    4320.0    4320.0      3328      5312       1402.9  void at::native::vectorized_elementwise_kernel<(int)4, at::native::log_kernel_cuda(at::TensorIterat…
+      0.0             8192          2    4096.0    4096.0      3968      4224        181.0  void at::native::elementwise_kernel<(int)128, (int)2, void at::native::gpu_kernel_impl_nocast<at::n…
+      0.0             5280          2    2640.0    2640.0      2624      2656         22.6  void at::native::vectorized_elementwise_kernel<(int)4, at::native::BinaryFunctor<float, float, floa…
+      0.0             5120          2    2560.0    2560.0      2528      2592         45.3  void at::native::vectorized_elementwise_kernel<(int)4, at::native::BUnaryFunctor<long, long, long, …
+      0.0             4608          2    2304.0    2304.0      2272      2336         45.3  void at::native::vectorized_elementwise_kernel<(int)4, at::native::AUnaryFunctor<long, long, long, …
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/cuda_gpu_mem_time_sum.py]... 
+
+ ** CUDA GPU MemOps Summary (by Time) (cuda_gpu_mem_time_sum):
+
+ Time (%)  Total Time (ns)  Count  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)            Operation           
+ --------  ---------------  -----  --------  --------  --------  --------  -----------  ------------------------------
+     99.5        105454879   2844   37079.8   21872.0     10176    141888      24846.0  [CUDA memcpy Device-to-Device]
+      0.5           531327    260    2043.6    1856.0      1024      7968        813.1  [CUDA memset]                 
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/cuda_gpu_mem_size_sum.py]... 
+
+ ** CUDA GPU MemOps Summary (by Size) (cuda_gpu_mem_size_sum):
+
+ Total (MB)  Count  Avg (MB)  Med (MB)  Min (MB)  Max (MB)  StdDev (MB)            Operation           
+ ----------  -----  --------  --------  --------  --------  -----------  ------------------------------
+  83327.386   2844    29.299    13.107    10.486   102.400       19.556  [CUDA memcpy Device-to-Device]
+      0.052    260     0.000     0.000     0.000     0.000        0.000  [CUDA memset]                 
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/openmp_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain OpenMP event data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/opengl_khr_range_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain KHR Extension (KHR_DEBUG) data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/opengl_khr_gpu_range_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain GPU KHR Extension (KHR_DEBUG) data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/vulkan_marker_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain Vulkan Debug Extension (Vulkan Debug Util) data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/vulkan_gpu_marker_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain GPU Vulkan Debug Extension (GPU Vulkan Debug markers) data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/dx11_pix_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain DX11 CPU debug markers.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/dx12_gpu_marker_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain DX12 GPU debug markers.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/dx12_pix_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain DX12 CPU debug markers.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/wddm_queue_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain WDDM context data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/um_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain CUDA Unified Memory CPU page faults data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/um_total_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain CUDA Unified Memory CPU page faults data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/um_cpu_page_faults_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain CUDA Unified Memory CPU page faults data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/openacc_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain OpenACC event data.
+
+Processing [/tmp/fsdp_nsys/fsdp_profile.sqlite] with [/usr/local/cuda-12.6/NsightSystems-cli-2024.7.1/target-linux-x64/reports/syscall_sum.py]... 
+SKIPPED: /tmp/fsdp_nsys/fsdp_profile.sqlite does not contain syscall data.
+
+
+=== STDERR ===

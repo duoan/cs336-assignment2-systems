@@ -1,3 +1,5 @@
+import os
+import time
 import warnings
 
 import torch
@@ -111,8 +113,16 @@ class FullyShardedDataParallel(nn.Module):
 
         # param → {shape, numel, chunk_size, dtype} for every sharded parameter
         self._shard_info: dict[nn.Parameter, dict] = {}
-        # param → (Work handle, output views, gather input) for in-flight async gathers
-        self._pending_work: dict[nn.Parameter, tuple[dist.Work, list[torch.Tensor], torch.Tensor]] = {}
+        # param → (Work handle, output views, gather input, direction, layer_idx)
+        # for in-flight async gathers
+        self._pending_work: dict[
+            nn.Parameter, tuple[dist.Work, list[torch.Tensor], torch.Tensor, str, int]
+        ] = {}
+        self._profile_waits = os.environ.get("FSDP_PROFILE_WAITS") == "1"
+        self._wait_profile_records: list[dict[str, float | int | str | bool]] = []
+        self._record_forward_order = False
+        self._observed_forward_order: list[nn.Module] = []
+        self._has_learned_forward_order = False
 
         # ── Step 1: shard weights & register hooks in module execution order ──
         self._ordered_layers: list[nn.Module] = []
@@ -127,7 +137,7 @@ class FullyShardedDataParallel(nn.Module):
             layer.register_full_backward_pre_hook(self._full_backward_pre_hook)
 
         # O(1) lookup: layer id → position in execution order
-        self._layer_index = {id(layer): i for i, layer in enumerate(self._ordered_layers)}
+        self._refresh_layer_indices()
 
         # ── Step 2: register gradient hooks on sharded params ──
         for param in self.parameters():
@@ -136,7 +146,53 @@ class FullyShardedDataParallel(nn.Module):
             param.register_post_accumulate_grad_hook(self._post_accumulate_grad_hook)
 
     def forward(self, *inputs, **kwargs):
-        return self.module(*inputs, **kwargs)
+        can_prefetch_boundaries = self._has_learned_forward_order and self.prefetch_depth > 0
+        if can_prefetch_boundaries and self._ordered_layers:
+            self._async_gather_weight(self._ordered_layers[0].weight, "fwd", 0)
+
+        self._observed_forward_order = []
+        self._record_forward_order = True
+        try:
+            output = self.module(*inputs, **kwargs)
+        finally:
+            self._record_forward_order = False
+
+        self._maybe_update_forward_order()
+        if can_prefetch_boundaries and self._output_requires_grad(output):
+            last_idx = len(self._ordered_layers) - 1
+            self._async_gather_weight(self._ordered_layers[last_idx].weight, "bwd", last_idx)
+        return output
+
+    def _output_requires_grad(self, output) -> bool:
+        if torch.is_tensor(output):
+            return output.requires_grad
+        if isinstance(output, dict):
+            return any(self._output_requires_grad(value) for value in output.values())
+        if isinstance(output, (tuple, list)):
+            return any(self._output_requires_grad(value) for value in output)
+        return False
+
+    def _refresh_layer_indices(self) -> None:
+        self._layer_index = {id(layer): i for i, layer in enumerate(self._ordered_layers)}
+        self._param_index = {layer.weight: i for i, layer in enumerate(self._ordered_layers)}
+
+    def _maybe_update_forward_order(self) -> None:
+        """Replace static module order with the actual forward hook order.
+
+        ``module.modules()`` gives registration order, but Python execution can
+        differ, e.g. ``w2(silu(w1(x)) * w3(x))`` executes as w1, w3, w2.
+        Prefetch must follow execution order, not registration order.
+        """
+        observed = self._observed_forward_order
+        if len(observed) != len(self._ordered_layers):
+            return
+        if {id(layer) for layer in observed} != {id(layer) for layer in self._ordered_layers}:
+            return
+
+        if any(current is not actual for current, actual in zip(self._ordered_layers, observed, strict=True)):
+            self._ordered_layers = list(observed)
+            self._refresh_layer_indices()
+        self._has_learned_forward_order = True
 
     # ── public API ─────────────────────────────────────────────────────
 
@@ -245,7 +301,56 @@ class FullyShardedDataParallel(nn.Module):
             return param.data
         return param.data.to(self.compute_dtype)
 
-    def _async_gather_weight(self, param: nn.Parameter):
+    def wait_profile_summary(self) -> str:
+        """Return a small text report for Nsight runs with FSDP_PROFILE_WAITS=1."""
+        if not self._wait_profile_records:
+            return "[fsdp_wait_profile] no wait records"
+
+        lines = ["[fsdp_wait_profile] gather wait latency"]
+        prefetched_total_ms = 0.0
+        sync_total_ms = 0.0
+        prefetched_count = 0
+        sync_count = 0
+        max_record = max(self._wait_profile_records, key=lambda r: float(r["wait_ms"]))
+        for record in self._wait_profile_records:
+            wait_ms = float(record["wait_ms"])
+            prefetched = bool(record["prefetched"])
+            if prefetched:
+                prefetched_total_ms += wait_ms
+                prefetched_count += 1
+            else:
+                sync_total_ms += wait_ms
+                sync_count += 1
+            lines.append(
+                "  "
+                f"{record['direction']} layer {record['layer_idx']:>3}: "
+                f"{wait_ms:8.3f} ms "
+                f"({'prefetched' if prefetched else 'sync fallback'})"
+            )
+        prefetched_avg_ms = prefetched_total_ms / max(prefetched_count, 1)
+        lines.append(
+            f"  prefetched_total={prefetched_total_ms:.3f} ms, "
+            f"prefetched_avg={prefetched_avg_ms:.3f} ms, "
+            f"sync_fallback_total={sync_total_ms:.3f} ms, "
+            f"max={float(max_record['wait_ms']):.3f} ms "
+            f"({max_record['direction']} layer {max_record['layer_idx']})"
+        )
+        return "\n".join(lines)
+
+    def clear_wait_profile(self) -> None:
+        self._wait_profile_records.clear()
+
+    def _nvtx_push(self, label: str) -> bool:
+        if not self._profile_waits or not torch.cuda.is_available():
+            return False
+        torch.cuda.nvtx.range_push(label)
+        return True
+
+    def _nvtx_pop(self, pushed: bool) -> None:
+        if pushed:
+            torch.cuda.nvtx.range_pop()
+
+    def _async_gather_weight(self, param: nn.Parameter, direction: str, layer_idx: int):
         """Start a non-blocking all-gather for prefetching.
 
         Saves param.data (the local shard) to param._local_shard, allocates
@@ -259,10 +364,19 @@ class FullyShardedDataParallel(nn.Module):
         full_param_padded = self._full_param_buffer(param)
         output_chunks = list(full_param_padded.chunk(self.world_size))
         gather_input = self._gather_input(param)
-        work = dist.all_gather(output_chunks, gather_input, async_op=True)
-        self._pending_work[param] = (work, output_chunks, gather_input)
+        pushed = self._nvtx_push(f"fsdp_prefetch_{direction}_layer_{layer_idx}")
+        try:
+            work = dist.all_gather(output_chunks, gather_input, async_op=True)
+        finally:
+            self._nvtx_pop(pushed)
+        self._pending_work[param] = (work, output_chunks, gather_input, direction, layer_idx)
 
-    def _ensure_gathered(self, param: nn.Parameter):
+    def _ensure_gathered(
+        self,
+        param: nn.Parameter,
+        direction: str | None = None,
+        layer_idx: int | None = None,
+    ):
         """Block until param.data holds the full weight.
 
         Three cases:
@@ -271,8 +385,25 @@ class FullyShardedDataParallel(nn.Module):
           3. Already gathered (_local_shard exists) → no-op
         """
         if param in self._pending_work:
-            work, _, _ = self._pending_work.pop(param)
-            work.wait()
+            work, _, _, pending_direction, pending_layer_idx = self._pending_work.pop(param)
+            direction = direction or pending_direction
+            layer_idx = pending_layer_idx if layer_idx is None else layer_idx
+            pushed = self._nvtx_push(f"fsdp_wait_{direction}_layer_{layer_idx}")
+            start = time.perf_counter()
+            try:
+                work.wait()
+            finally:
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                self._nvtx_pop(pushed)
+            if self._profile_waits:
+                self._wait_profile_records.append(
+                    {
+                        "direction": direction,
+                        "layer_idx": layer_idx,
+                        "wait_ms": elapsed_ms,
+                        "prefetched": True,
+                    }
+                )
             full_weight = self._full_param_view(param)
             param.data = full_weight
         elif not hasattr(param, "_local_shard"):
@@ -280,7 +411,24 @@ class FullyShardedDataParallel(nn.Module):
             full_param_padded = self._full_param_buffer(param)
             output_chunks = list(full_param_padded.chunk(self.world_size))
             gather_input = self._gather_input(param)
-            dist.all_gather(output_chunks, gather_input)
+            layer_idx = self._param_index.get(param, -1) if layer_idx is None else layer_idx
+            direction = direction or "sync"
+            pushed = self._nvtx_push(f"fsdp_sync_gather_{direction}_layer_{layer_idx}")
+            start = time.perf_counter()
+            try:
+                dist.all_gather(output_chunks, gather_input)
+            finally:
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                self._nvtx_pop(pushed)
+            if self._profile_waits:
+                self._wait_profile_records.append(
+                    {
+                        "direction": direction,
+                        "layer_idx": layer_idx,
+                        "wait_ms": elapsed_ms,
+                        "prefetched": False,
+                    }
+                )
             full_weight = self._full_param_view(param)
             param.data = full_weight
 
@@ -299,13 +447,17 @@ class FullyShardedDataParallel(nn.Module):
 
     def _forward_pre_hook(self, module: nn.Module, args):
         """Before layer forward: materialise current weight and prefetch ahead."""
-        self._ensure_gathered(module.weight)
+        if self._record_forward_order:
+            self._observed_forward_order.append(module)
         idx = self._layer_index[id(module)]
+        self._ensure_gathered(module.weight, direction="fwd", layer_idx=idx)
+        if not self._has_learned_forward_order:
+            return
         for offset in range(1, self.prefetch_depth + 1):
             next_idx = idx + offset
             if next_idx >= len(self._ordered_layers):
                 break
-            self._async_gather_weight(self._ordered_layers[next_idx].weight)
+            self._async_gather_weight(self._ordered_layers[next_idx].weight, "fwd", next_idx)
 
     def _forward_hook(self, module: nn.Module, args, result):
         """After layer forward: discard full weight, keep only local shard."""
@@ -316,13 +468,13 @@ class FullyShardedDataParallel(nn.Module):
 
         Backward traverses layers in reverse order, so we prefetch idx-1.
         """
-        self._ensure_gathered(module.weight)
         idx = self._layer_index[id(module)]
+        self._ensure_gathered(module.weight, direction="bwd", layer_idx=idx)
         for offset in range(1, self.prefetch_depth + 1):
             prev_idx = idx - offset
             if prev_idx < 0:
                 break
-            self._async_gather_weight(self._ordered_layers[prev_idx].weight)
+            self._async_gather_weight(self._ordered_layers[prev_idx].weight, "bwd", prev_idx)
 
     def _post_accumulate_grad_hook(self, param: nn.Parameter):
         """After gradient is computed for a sharded param: reduce-scatter.

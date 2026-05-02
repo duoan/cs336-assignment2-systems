@@ -1895,14 +1895,28 @@ The cost is extra all-gather communication before every layer's
 forward and backward pass (mitigated by async prefetching).
 
 \textbf{Why measured saving $\neq$ theoretical.}
-Our final implementation follows the FairScale-style parameter lifecycle:
-each sharded parameter owns a stable reusable full-parameter buffer, and
-the buffer's storage is resized to zero whenever the layer is idle.
-This matters because PyTorch autograd may save views of the gathered
-weight during forward; keeping the tensor/storage identity stable lets us
-free the storage after forward and rematerialize it before backward.
-Thus the current allocated memory after wrapping and after zeroing gradients
-reflects the expected sharding behavior.
+Our final implementation follows the FairScale-style parameter lifecycle.
+For every sharded parameter we allocate a stable
+\texttt{full\_param\_padded} tensor object with the padded full-weight shape,
+immediately resize its underlying storage to zero, and then reuse that same
+object for later all-gathers.  Before a layer computes, the storage is
+rematerialized in place and filled by \texttt{all\_gather}; after the layer no
+longer needs the full weight, \texttt{param.data} is restored to the local
+shard and the full buffer's storage is resized back to zero.  The important
+trick is that the tensor metadata and identity stay stable while the storage
+comes and goes.
+
+This is necessary because PyTorch autograd may save views of gathered weights
+during forward.  If each all-gather created a fresh full-weight tensor, those
+saved views would keep the fresh storage alive until backward, defeating the
+ZeRO-3 memory goal.  Reusing one stable buffer per parameter avoids that leak:
+autograd can keep its tensor references, but the storage is only resident while
+the corresponding layer is actually computing.  The main pitfalls are that the
+buffer must be padded to a multiple of the world size, must be allocated before
+calling NCCL and freed only after stream use is recorded, and must not be
+replaced with a new tensor object.  With this lifecycle, the current allocated
+memory after wrapping and after zeroing gradients reflects the expected
+sharded-state behavior.
 
 The peak memory is still larger than the steady-state $4P/N$ prediction:
 \texttt{max\_memory\_allocated} records transient forward/backward allocations,
@@ -1926,9 +1940,13 @@ Measured peak                 & $4P{+}A$ & $4P/N + A + \text{temporaries}$ \\
 \end{center}
 
 For $N{=}2$, the \emph{steady-state} prediction is a 25.4\,GiB reduction
-from DDP to FSDP.  The measured fp32 training-step peak saves 12.67\,GiB,
-while the current allocated memory after \texttt{zero\_grad} is 25.39\,GiB,
-almost exactly the theoretical $4P/N$ value.
+from DDP to FSDP when parameters, gradients, and Adam states are all resident.
+The latest run saves 18.93\,GiB at the fp32 measured step peak.  The current
+allocated memory after \texttt{zero\_grad} is smaller than $4P/N$ because
+gradients are set to \texttt{None}; the fp32 footprint is 19.14\,GiB, matching
+the expected $3P/N$ state for parameters plus Adam states.  After backward,
+when gradients are resident again, the fp32 footprint is 25.53\,GiB, matching
+the $4P/N$ prediction.
 
 \textbf{Experimental results} (2$\times$A100-80GB):
 
@@ -1938,11 +1956,11 @@ almost exactly the theoretical $4P/N$ value.
 Current allocated memory & DDP & FSDP fp32 & FSDP fp16 \\
 \midrule
 After wrap             & 12.82\,GiB &  6.41\,GiB &  6.41\,GiB \\
-After warmup           & 50.94\,GiB & 31.75\,GiB & 29.42\,GiB \\
-Measure start          & 50.94\,GiB & 31.75\,GiB & 29.42\,GiB \\
-After zero\_grad       & 38.25\,GiB & 25.39\,GiB & 23.07\,GiB \\
-After backward+sync    & 50.97\,GiB & 31.78\,GiB & 29.44\,GiB \\
-After optimizer step   & 50.97\,GiB & 31.78\,GiB & 29.44\,GiB \\
+After warmup           & 50.94\,GiB & 25.49\,GiB & 25.51\,GiB \\
+Measure start          & 50.94\,GiB & 25.49\,GiB & 25.51\,GiB \\
+After zero\_grad       & 38.25\,GiB & 19.14\,GiB & 19.16\,GiB \\
+After backward+sync    & 50.97\,GiB & 25.53\,GiB & 25.53\,GiB \\
+After optimizer step   & 50.97\,GiB & 25.53\,GiB & 25.53\,GiB \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -1953,11 +1971,11 @@ After optimizer step   & 50.97\,GiB & 31.78\,GiB & 29.44\,GiB \\
 Peak memory & DDP & FSDP fp32 & FSDP fp16 \\
 \midrule
 Build/wrap peak        & 12.82\,GiB & 12.96\,GiB & 12.91\,GiB \\
-Warmup peak            & 52.12\,GiB & 39.44\,GiB & 32.02\,GiB \\
-Measured fwd+bwd peak  & 52.12\,GiB & 39.44\,GiB & 32.01\,GiB \\
-Measured step peak     & 52.12\,GiB & 39.44\,GiB & 32.01\,GiB \\
+Warmup peak            & 52.12\,GiB & 33.18\,GiB & 28.10\,GiB \\
+Measured fwd+bwd peak  & 52.12\,GiB & 33.18\,GiB & 28.09\,GiB \\
+Measured step peak     & 52.12\,GiB & 33.18\,GiB & 28.09\,GiB \\
 \midrule
-Saving vs DDP (peak)   & --- & 12.67\,GiB (24.3\%) & 20.1\,GiB (38.6\%) \\
+Saving vs DDP (peak)   & --- & 18.93\,GiB (36.3\%) & 24.02\,GiB (46.1\%) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -1967,26 +1985,27 @@ Saving vs DDP (peak)   & --- & 12.67\,GiB (24.3\%) & 20.1\,GiB (38.6\%) \\
 \toprule
 Timing (median, ms) & DDP & FSDP fp32 & FSDP fp16 \\
 \midrule
-Total step         & 1467 & 1585 & 605 \\
-Forward + backward & 1386 & 1542 & 550 \\
-Gradient sync      &   18 &   10 &  10 \\
-Optimizer step     &   62 &   32 &  45 \\
+Total step         & 1462 & 1542 & 507 \\
+Forward + backward & 1383 & 1505 & 455 \\
+Gradient sync      &   18 &    6 &   6 \\
+Optimizer step     &   61 &   31 &  45 \\
 \midrule
-Overhead vs DDP    & ---  & +8.0\% & $-$58.8\% \\
+Overhead vs DDP    & ---  & +5.5\% & $-$65.3\% \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-FSDP fp32 adds 8.0\% overhead vs DDP despite all-gathering every
+FSDP fp32 adds 5.5\% overhead vs DDP despite all-gathering every
 layer's weights twice per step (forward + backward).
-With mixed-precision (fp16), FSDP is 58.8\% \emph{faster} than DDP fp32
+With mixed-precision (fp16), FSDP is 65.3\% \emph{faster} than DDP fp32
 due to halved arithmetic and communication volume.
 The current-memory table confirms the intended ZeRO-3 behavior: after
 wrapping, each FSDP rank holds only 6.41\,GiB of resident parameters
-($50\%$ of the full model), and after \texttt{zero\_grad} the fp32
-footprint is 25.39\,GiB, matching the $4P/N$ theoretical state size.
-The remaining gap in peak memory comes from transient computation-time
-allocations rather than persistent replicated model state.
+($50\%$ of the full model), after \texttt{zero\_grad} the fp32 footprint is
+19.14\,GiB ($3P/N$, because gradients are freed), and after backward it is
+25.53\,GiB ($4P/N$, with gradients resident).  The remaining gap in peak
+memory comes from transient computation-time allocations rather than persistent
+replicated model state.
 
 \textbf{Prefetch-depth sweep.}
 To quantify the memory/latency tradeoff from asynchronous all-gather
@@ -1999,61 +2018,70 @@ hardware, and benchmark protocol are the same as above.
 \toprule
 FSDP fp32 prefetch depth & 0 & 1 & 2 & 4 \\
 \midrule
-Current after \texttt{zero\_grad} & 19.14\,GiB & 25.39\,GiB & 25.39\,GiB & 25.38\,GiB \\
-Measured step peak       & 32.99\,GiB & 39.44\,GiB & 39.49\,GiB & 39.66\,GiB \\
-Peak saving vs DDP       & 36.7\% & 24.3\% & 24.2\% & 23.9\% \\
-Total step latency       & 1622\,ms & 1587\,ms & 1558\,ms & 1541\,ms \\
-Overhead vs DDP          & 10.6\% & 8.2\% & 6.2\% & 5.0\% \\
+Current after \texttt{zero\_grad} & 19.14\,GiB & 19.14\,GiB & 19.14\,GiB & 19.14\,GiB \\
+Measured step peak       & 32.99\,GiB & 33.18\,GiB & 33.36\,GiB & 33.61\,GiB \\
+Peak saving vs DDP       & 36.7\% & 36.3\% & 36.0\% & 35.5\% \\
+Total step latency       & 1618\,ms & 1546\,ms & 1541\,ms & 1524\,ms \\
+Overhead vs DDP          & 10.6\% & 5.7\% & 5.3\% & 4.2\% \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The sweep shows the expected tradeoff.  With \texttt{prefetch\_depth=0},
-FSDP minimizes memory because no future full-weight buffers are resident,
-but it must block on each layer's all-gather and is the slowest FSDP
-configuration.  Increasing the depth overlaps more all-gather work with
-compute, reducing total step time from 1622\,ms to 1541\,ms, but increases
-the measured peak from 32.99\,GiB to 39.66\,GiB.  In this setting,
-\texttt{prefetch\_depth=1} is a reasonable balanced default: most of the
-overlap benefit appears by depth 1, while deeper prefetching gives smaller
-latency gains and slightly higher peak memory.
+The sweep shows the expected tradeoff, now without changing the persistent
+state size.  Since idle full-weight buffers release their storage, all depths
+have the same 19.14\,GiB current footprint after \texttt{zero\_grad}.  Depth
+only affects transient overlap buffers: increasing it reduces total step time
+from 1618\,ms to 1524\,ms, while the measured peak rises modestly from
+32.99\,GiB to 33.61\,GiB.  In this setting, \texttt{prefetch\_depth=1} is a
+reasonable balanced default: it captures most of the latency gain with only
+0.19\,GiB additional peak memory, while deeper prefetching gives smaller
+incremental latency gains and slightly higher peaks.
 
 \paragraph{(b) All-gather timing analysis.}
 
-We profile one full training step of the XL model on 2$\times$A100-80GB using
-\texttt{torch.profiler} (script: \texttt{cs336\_systems/fsdp\_profile.py}).
-The profiler reports aggregate CUDA kernel time for NCCL collectives vs.\ compute
-(GEMM/BMM) kernels:
+For the timing analysis I switched the profiling script to launch
+\texttt{nsys profile} in a subprocess and to bracket exactly one measured
+training step with \texttt{cudaProfilerStart/Stop}.  The FSDP implementation
+also emits NVTX ranges for each prefetch and records the latency of every
+\texttt{work.wait()} call.  This is more useful than only looking at aggregate
+NCCL time: aggregate NCCL kernels tell us communication happened, but
+\texttt{work.wait()} latency tells us whether compute actually stalled waiting
+for a full weight.
 
 \begin{center}
-\begin{tabular}{lrr}
+\begin{tabular}{lr}
 \toprule
-\textbf{Category} & \textbf{Total time (ms)} & \textbf{Op count} \\
+\textbf{Wait-profile metric} & \textbf{Value} \\
 \midrule
-NCCL all-gather      & 491.7  & 452 \\
-NCCL reduce-scatter  &  69.4  & 226 \\
-NCCL all-reduce      &   0.8  &  65 \\
-\midrule
-\textbf{Total NCCL}  & \textbf{810.9} & --- \\
-\midrule
-Compute (sgemm/bmm)  & 8944.5 & --- \\
+Forward all-gather waits & 226 / 226 prefetched \\
+Backward all-gather waits & 226 / 226 prefetched \\
+Total prefetched wait time & 8.822\,ms \\
+Average prefetched wait & 0.020\,ms \\
+Maximum wait & 0.043\,ms \\
+Synchronous fallback wait & 0.000\,ms \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-The NCCL-to-compute ratio is $810.9 / 8944.5 \approx 0.09$, meaning
-communication accounts for only \textbf{9\%} of the total compute time.
-With prefetching enabled, the all-gather for layer $\ell+1$ overlaps with
-the forward/backward compute of layer $\ell$.
-Since each per-layer all-gather takes $\sim$1.1\,ms on average while
-a single layer's matmuls take $\sim$280\,ms,
-the communication finishes well before the next layer needs its weights.
-In the Perfetto trace, NCCL kernels run on a dedicated CUDA stream and
-complete long before the compute stream issues the next layer's first GEMM.
+The first Nsight trace exposed a bug in my prefetch schedule: every transformer
+block's \texttt{SwiGLU} executes its projections in order
+\texttt{w1 -> w3 -> w2}, while the static module registration order is
+\texttt{w1 -> w2 -> w3}.  Because each block has seven sharded linear layers,
+this mismatch appeared as a regular sync fallback roughly every seven layers.
+The fix was to learn the runtime forward order during the first warmup pass and
+then prefetch according to that observed order.  I also added boundary
+prefetching: before the measured forward starts we prefetch the first forward
+layer, and after forward returns we prefetch the first backward layer.  This
+makes the schedule effectively ring-like, so neither boundary needs a blocking
+first gather in the measured step.
 
-\textbf{Conclusion:} On 2 GPUs with NVLink, the all-gather communication
-is fully hidden behind compute---the forward pass never stalls waiting for
-weights, confirming effective overlap via our prefetch implementation.
+After these changes, the Nsight run shows that all forward and backward
+all-gathers are prefetched, including forward layer 0 and the first backward
+layer.  The remaining wait time is only tens of microseconds per layer, and
+\texttt{sync\_fallback\_total=0.000\,ms}.  Therefore, on 2$\times$A100-80GB
+with NVLink, the all-gather communication is effectively hidden behind compute;
+the FSDP overhead that remains in the end-to-end benchmark is not due to large
+uncovered all-gather stalls.
 
 
 %% ============================================================
