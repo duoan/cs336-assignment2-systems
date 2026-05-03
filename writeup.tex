@@ -2063,6 +2063,18 @@ Synchronous fallback wait & 0.000\,ms \\
 \end{tabular}
 \end{center}
 
+
+\begin{figure}[H]
+  \centering
+  \makebox[\textwidth][c]{\includegraphics[width=\paperwidth]{figures/nsys-fsdp.png}}
+  \caption{Nsight System Screenshots.}
+  Nsight timeline plus explicit work.wait() timing show that all-gather is 
+  effectively hidden by compute. After learning runtime forward order and 
+  adding boundary prefetch, all forward/backward gathers are prefetched and 
+  synchronous fallback is eliminated.
+  \label{fig:nsys_fsdp}
+\end{figure}
+
 The first Nsight trace exposed a bug in my prefetch schedule: every transformer
 block's \texttt{SwiGLU} executes its projections in order
 \texttt{w1 -> w3 -> w2}, while the static module registration order is
@@ -2082,17 +2094,6 @@ layer.  The remaining wait time is only tens of microseconds per layer, and
 with NVLink, the all-gather communication is effectively hidden behind compute;
 the FSDP overhead that remains in the end-to-end benchmark is not due to large
 uncovered all-gather stalls.
-
-\begin{figure}[htbp]
-  \centering
-  \makebox[\textwidth][c]{\includegraphics[width=\paperwidth]{figures/nsys-fsdp.png}}
-  \caption{Nsight System Screenshots.}
-  Nsight timeline plus explicit work.wait() timing show that all-gather is 
-  effectively hidden by compute. After learning runtime forward order and 
-  adding boundary prefetch, all forward/backward gathers are prefetched and 
-  synchronous fallback is eliminated.
-  \label{fig:nsys_fsdp}
-\end{figure}
 
 
 %% ============================================================
