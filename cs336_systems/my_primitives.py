@@ -222,6 +222,29 @@ def my_ring_all_reduce(tensor: torch.Tensor):
     my_all_gather(tensor)
 
 
+def alternate_ring_all_reduce(tensor: torch.Tensor):
+    world_size = dist.get_world_size()
+    rank = dist.get_rank()
+    right = (rank + 1) % world_size
+    left = (rank - 1 + world_size) % world_size
+    # y <- x^(i)
+    # tensor itself stores the running partial sum y.
+    send_buffer = tensor.clone()
+    recv_buffer = torch.empty_like(tensor)
+    for _ in range(1, world_size):
+        # At step t, rank i sends the full tensor x^((i - t + 1) mod N)
+        # that it currently holds in send_buffer.
+        req_send = dist.isend(send_buffer, dst=right)
+        # It receives the full tensor x^((i - t) mod N) from the left.
+        req_recv = dist.irecv(recv_buffer, src=left)
+        req_send.wait()
+        req_recv.wait()
+        # y <- y + received x
+        tensor.add_(recv_buffer)
+        # The tensor we just received is what we forward in the next step.
+        send_buffer.copy_(recv_buffer)
+        
+
 def app(rank, world_size: int, input_size: int):
     setup(rank, world_size)
     
@@ -270,10 +293,10 @@ def app(rank, world_size: int, input_size: int):
         print("=" * 100) 
     data = torch.tensor([dist.get_rank() + 1 for _ in range(4)])
     print(f"rank {rank} data (before ring-all-reduce): {data}")
-    my_ring_all_reduce(data)
+    alternate_ring_all_reduce(data)
     print(f"rank {rank} data (after ring-all-reduce): {data}")
     dist.barrier()
-    
+        
     dist.destroy_process_group()
     
 

@@ -2092,7 +2092,12 @@ uncovered all-gather stalls.
 \subsection{Communication Primitives}
 \textbf{Problem (alternate\_ring\_all\_reduce)}
 
-% TODO: Answer in terms of S, N, W with justification
+\begin{equation*}
+  T = \frac{(N - 1) S}{W} 
+\end{equation*}
+
+The algorithm runs for $N - 1$ steps, and in each step every device sends one 
+full tensor of size S over an egress bandwidth of W, so the total communication time is $T = \frac{(N - 1) S}{W}$.
 
 % ----------------------------------------------------------
 \subsection{Data Parallel Calculations}
