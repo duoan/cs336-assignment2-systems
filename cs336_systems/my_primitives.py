@@ -1,4 +1,5 @@
 import os
+from torch._tensor import Tensor
 
 import torch
 import torch.distributed as dist
@@ -6,8 +7,8 @@ import torch.multiprocessing as mp
 
 
 def setup(rank, world_size):
-    os.environ["MASTER_ADDR"] = "localhost"
-    os.environ["MASTER_PORT"] = "29500"
+    os.environ.setdefault("MASTER_ADDR", "localhost")
+    os.environ.setdefault("MASTER_PORT", "29500")
     dist.init_process_group("gloo", rank=rank, world_size=world_size)
     
 def my_broadcast(tensor: torch.Tensor, src: int=0):
@@ -242,6 +243,50 @@ def alternate_ring_all_reduce(tensor: torch.Tensor):
         send_buffer.copy_(recv_buffer)
         
 
+def all_to_all(output_tensor_list: list[torch.Tensor], input_tensor_list: list[torch.Tensor]):
+    world_size = dist.get_world_size()
+    rank = dist.get_rank()
+
+    # all to all
+    # input_tensor_list
+    # rank#0: 1, 1, 1, 1
+    # rank#1: 2, 2, 2, 2
+    # rank#2: 3, 3, 3, 3
+    # rank#3: 4, 4, 4, 4
+
+    # output_tensor_list:
+    # rank#0: 1, 2, 3, 4
+    # rank#1: 1, 2, 3, 4
+    # rank#2: 1, 2, 3, 4
+    # rank#3: 1, 2, 3, 4
+
+    assert len(output_tensor_list) == world_size
+    assert len(input_tensor_list) == world_size
+
+    for t in input_tensor_list:
+        assert t.is_contiguous()
+    
+    for t in output_tensor_list:
+        assert t.is_contiguous()
+
+    # local rank: input[rank] -> output[rank]
+    if output_tensor_list[rank].data_ptr() != input_tensor_list[rank].data_ptr():
+        output_tensor_list[rank].copy_(input_tensor_list[rank])
+
+    # Pairwise exchange to avoid deedlokc
+    for peer in range(world_size):
+        if peer == rank:
+            continue
+        
+        if rank < peer:
+            # Lower rank sends first, then receives.
+            dist.send(input_tensor_list[peer], dst=peer)
+            dist.recv(output_tensor_list[peer], src=peer)
+        else:
+            # Higher rank receives first, then sends.
+            dist.recv(output_tensor_list[peer], src=peer)
+            dist.send(input_tensor_list[peer], dst=peer)
+
 def app(rank, world_size: int, input_size: int):
     setup(rank, world_size)
     
@@ -293,7 +338,32 @@ def app(rank, world_size: int, input_size: int):
     alternate_ring_all_reduce(data)
     print(f"rank {rank} data (after ring-all-reduce): {data}")
     dist.barrier()
-        
+
+    if rank == 0:
+        print("=" * 100) 
+    # Example:
+    # rank 0: [1, 1, 1, 1]
+    # rank 1: [2, 2, 2, 2]
+    # rank 2: [3, 3, 3, 3]
+    # rank 3: [4, 4, 4, 4]
+    x = torch.full((world_size,), rank + 1, dtype=torch.float32)
+
+    # Split input into world_size chunks.
+    # input_chunks[i] is sent to rank i.
+    input_chunks = list(x.chunk(world_size, dim=0))
+
+    # Allocate output chunks.
+    # output_chunks[i] receives data from rank i.
+    output_chunks = [
+        torch.empty_like(input_chunks[0])
+        for _ in range(world_size)
+    ]
+
+    print(f"rank {rank} input_chunks (before all-to-all: {torch.cat(input_chunks)})")
+    all_to_all(output_chunks, input_chunks)
+    print(f"rank {rank} output_chunks (after all to all): {torch.cat(output_chunks)}")
+    dist.barrier()
+
     dist.destroy_process_group()
     
 
