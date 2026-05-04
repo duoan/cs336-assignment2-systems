@@ -105,28 +105,27 @@ def my_all_gather(tensor: torch.Tensor):
     # Each step moves already-finished chunks clockwise:
     #
     #   step 0:
-    #     rank 2 sends chunk 3 -> rank 3
-    #     rank 2 receives chunk 2 <- rank 1
-    #
-    #   step 1:
     #     rank 2 sends chunk 2 -> rank 3
     #     rank 2 receives chunk 1 <- rank 1
     #
-    #   step 2:
+    #   step 1:
     #     rank 2 sends chunk 1 -> rank 3
     #     rank 2 receives chunk 0 <- rank 1
     #
-    # Why send_idx = rank + 1 - step?
-    #   In this schedule, the chunk just "ahead" of us in the ring is forwarded
-    #   first, then we walk backward through chunk ids as more chunks arrive.
+    #   step 2:
+    #     rank 2 sends chunk 0 -> rank 3
+    #     rank 2 receives chunk 3 <- rank 1
     #
-    # Why recv_idx = rank - step?
-    #   At step 0, the first useful chunk arriving from the left is our own
-    #   owner chunk. After that, the arriving chunk id decreases by one each
-    #   step as data keeps rotating around the ring.
+    # Why send_idx = rank - step?
+    #   At step 0, this rank sends its own reduced chunk. On later steps, it
+    #   forwards the chunk it received in the previous step.
+    #
+    # Why recv_idx = rank - step - 1?
+    #   The left neighbor owns the previous chunk, and each step walks backward
+    #   through chunk ids as data rotates around the ring.
     for step in range(world_size - 1):
-        send_idx = (rank + 1 - step) % world_size
-        recv_idx = (rank - step) % world_size
+        send_idx = (rank - step) % world_size
+        recv_idx = (rank - step - 1) % world_size
 
         # Post both operations before waiting. If every rank used blocking send
         # first, the ring could deadlock because everyone would wait to send.
@@ -183,26 +182,24 @@ def my_reduce_scatter(tensor: torch.Tensor):
     #
     #   step | send_idx | recv_idx | meaning
     #   -----+----------+----------+------------------------------------------
-    #     0  |    2     |    1     | send chunk2, receive chunk1 and add it
-    #     1  |    1     |    0     | send chunk1, receive chunk0 and add it
-    #     2  |    0     |    3     | send chunk0, receive chunk3 and add it
+    #     0  |    1     |    0     | send chunk1, receive chunk0 and add it
+    #     1  |    0     |    3     | send chunk0, receive chunk3 and add it
+    #     2  |    3     |    2     | send chunk3, receive chunk2 and add it
     #
-    # Why send_idx = rank - step?
-    #   At step 0, rank r starts by sending chunk r to the right. That chunk is
-    #   moving toward its final owner while collecting contributions. On later
-    #   steps, this rank forwards the chunk it received and reduced in the
-    #   previous step, so the chunk id walks backward by one each time.
+    # Why send_idx = rank - step - 1?
+    #   At step 0, rank r starts by sending the chunk just before its final
+    #   owner chunk. On later steps, this rank forwards the chunk it received
+    #   and reduced in the previous step.
     #
-    # Why recv_idx = rank - step - 1?
-    #   Because the left neighbor is one rank behind us. At step 0, it sends us
-    #   chunk r - 1. After each rotation, the next incoming chunk id also moves
-    #   backward by one.
+    # Why recv_idx = rank - step - 2?
+    #   Because the left neighbor is one rank behind us, and we offset the
+    #   schedule so the final receive lands on chunk r.
     #
     # The modulo wraps around the ring:
-    #   for rank 0, recv_idx at step 0 is -1 % world_size, i.e. chunk world_size-1.
+    #   for rank 0, recv_idx at step 0 is -2 % world_size, i.e. chunk world_size-2.
     for step in range(world_size - 1):
-        send_idx = (rank - step) % world_size
-        recv_idx = (rank - step - 1) % world_size
+        send_idx = (rank - step - 1) % world_size
+        recv_idx = (rank - step - 2) % world_size
 
         # Non-blocking send/recv keeps the whole ring from deadlocking.
         req_send = dist.isend(chunks[send_idx], dst=right)

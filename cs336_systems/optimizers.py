@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from typing import Any, Type
+from typing import Any
 
 import torch
 import torch.distributed as dist
@@ -23,7 +23,7 @@ class ShardedOptimizer(Optimizer):
     def __init__(
         self,
         params: Iterable[torch.Tensor],
-        optimizer_cls: Type[Optimizer],
+        optimizer_cls: type[Optimizer],
         **kwargs: Any,
     ) -> None:
 

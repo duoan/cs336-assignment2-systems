@@ -2104,24 +2104,222 @@ uncovered all-gather stalls.
 \subsection{Communication Primitives}
 \textbf{Problem (alternate\_ring\_all\_reduce)}
 
+Here $S$ denotes the communicated tensor size in \emph{bytes}, and $W$
+denotes each device's outgoing network bandwidth in \emph{bytes/second}
+(not a model weight matrix).
+
 \begin{equation*}
   T = \frac{(N - 1) S}{W} 
 \end{equation*}
 
 The algorithm runs for $N - 1$ steps, and in each step every device sends one 
-full tensor of size S over an egress bandwidth of W, so the total communication time is $T = \frac{(N - 1) S}{W}$.
+full tensor of size $S$ bytes over egress bandwidth $W$, so the total
+communication time is $T = \frac{(N - 1) S}{W}$.
 
 % ----------------------------------------------------------
 \subsection{Data Parallel Calculations}
 \textbf{Problem (data\_parallel\_calcs)}
 
+In this subsection, $W_1,W_2,W_3$ are FFN weight matrices, while plain $W$
+without a subscript is the per-device egress bandwidth from Section 8.1.  I
+use $S$ only for a communication payload size in bytes.
+
 \paragraph{(a) FLOPs for backward pass with $N_{\text{DP}}$ data parallelism.}
+
+Under data parallelism, each device receives only a shard of the batch, so the
+local input and local upstream gradient have shape
+\[
+  x^{(i)}, dy^{(i)} \in \mathbb{R}^{B/N_{\text{DP}} \times D}.
+\]
+The weights are not sharded:
+\[
+  W_1, W_2 \in \mathbb{R}^{D \times D_{\text{FF}}},
+  \qquad
+  W_3 \in \mathbb{R}^{D_{\text{FF}} \times D}.
+\]
+We ignore all elementwise operations, so the only FLOPs come from the six
+matrix multiplications in the backward pass.  Using
+\[
+  (A,B)(B,C) \to (A,C)
+  \quad\text{costs}\quad
+  2ABC \text{ FLOPs},
+\]
+the per-device costs are:
+
+\begin{align*}
+  dz^{(i)}
+    &= dy^{(i)} W_3^\top,
+  &
+  \left(\frac{B}{N_{\text{DP}}}, D\right)(D,D_{\text{FF}})
+    &\to \left(\frac{B}{N_{\text{DP}}}, D_{\text{FF}}\right),
+  &
+  \text{FLOPs}
+    &= \frac{2BD D_{\text{FF}}}{N_{\text{DP}}}.
+\\
+  dx_1^{(i)} W_1^\top
+    &\text{ part of } dx^{(i)},
+  &
+  \left(\frac{B}{N_{\text{DP}}}, D_{\text{FF}}\right)(D_{\text{FF}},D)
+    &\to \left(\frac{B}{N_{\text{DP}}}, D\right),
+  &
+  \text{FLOPs}
+    &= \frac{2BD D_{\text{FF}}}{N_{\text{DP}}}.
+\\
+  dx_2^{(i)} W_2^\top
+    &\text{ part of } dx^{(i)},
+  &
+  \left(\frac{B}{N_{\text{DP}}}, D_{\text{FF}}\right)(D_{\text{FF}},D)
+    &\to \left(\frac{B}{N_{\text{DP}}}, D\right),
+  &
+  \text{FLOPs}
+    &= \frac{2BD D_{\text{FF}}}{N_{\text{DP}}}.
+\\
+  dW_3^{(i)}
+    &= (z^{(i)})^\top dy^{(i)},
+  &
+  \left(D_{\text{FF}},\frac{B}{N_{\text{DP}}}\right)
+  \left(\frac{B}{N_{\text{DP}}},D\right)
+    &\to (D_{\text{FF}},D),
+  &
+  \text{FLOPs}
+    &= \frac{2BD D_{\text{FF}}}{N_{\text{DP}}}.
+\\
+  dW_2^{(i)}
+    &= (x^{(i)})^\top dx_2^{(i)},
+  &
+  \left(D,\frac{B}{N_{\text{DP}}}\right)
+  \left(\frac{B}{N_{\text{DP}}},D_{\text{FF}}\right)
+    &\to (D,D_{\text{FF}}),
+  &
+  \text{FLOPs}
+    &= \frac{2BD D_{\text{FF}}}{N_{\text{DP}}}.
+\\
+  dW_1^{(i)}
+    &= (x^{(i)})^\top dx_1^{(i)},
+  &
+  \left(D,\frac{B}{N_{\text{DP}}}\right)
+  \left(\frac{B}{N_{\text{DP}}},D_{\text{FF}}\right)
+    &\to (D,D_{\text{FF}}),
+  &
+  \text{FLOPs}
+    &= \frac{2BD D_{\text{FF}}}{N_{\text{DP}}}.
+\end{align*}
+
+Therefore the backward-pass compute per device is
+\[
+  \boxed{
+    \text{FLOPs}_{\text{DP,bwd,per device}}
+    =
+    \frac{12 B D D_{\text{FF}}}{N_{\text{DP}}}
+  }.
+\]
+Equivalently, the aggregate compute across all devices is
+$12BD D_{\text{FF}}$ FLOPs, but each device only performs the work for its
+$B/N_{\text{DP}}$ local examples.
 
 
 \paragraph{(b) Communication time for backward pass.}
 
+In data parallelism, each device computes only a local partial weight gradient
+from its own $B/N_{\text{DP}}$ examples:
+\[
+  dW_1^{(i)}, dW_2^{(i)}, dW_3^{(i)}.
+\]
+To obtain the true full-batch gradients, we need to all-reduce these three
+partial sums across the $N_{\text{DP}}$ devices.  The activation gradients
+$dx^{(i)}$ are local to each batch shard and do not need communication.
+
+Each FFN weight-gradient matrix has $D D_{\text{FF}}$ elements:
+\[
+  dW_1, dW_2 \in \mathbb{R}^{D \times D_{\text{FF}}},
+  \qquad
+  dW_3 \in \mathbb{R}^{D_{\text{FF}} \times D}.
+\]
+Since the problem assumes FP16 values, each element is 2 bytes.  Therefore the
+total communication payload size, denoted by $S$, is
+\[
+  S
+  =
+  3 \cdot D D_{\text{FF}} \cdot 2
+  =
+  6D D_{\text{FF}}
+  \quad\text{bytes}.
+\]
+
+Using the ring all-reduce cost from Section 8.1, all-reducing a payload of
+$S$ bytes across $N$ devices with per-device egress bandwidth $W$ takes
+\[
+  2\frac{N-1}{N}\frac{S}{W}
+\]
+seconds.  Substituting $N=N_{\text{DP}}$ and
+$S=6D D_{\text{FF}}$ gives
+\[
+  \boxed{
+  T_{\text{DP,bwd,comm}}
+  =
+  2\frac{N_{\text{DP}}-1}{N_{\text{DP}}}
+  \frac{6D D_{\text{FF}}}{W}
+  =
+  \frac{12D D_{\text{FF}}}{W}
+  \frac{N_{\text{DP}}-1}{N_{\text{DP}}}
+  }.
+\]
+This communication time is independent of $B$ because data parallelism
+communicates weight gradients, whose sizes are determined by the model
+dimensions rather than the local batch size.
+
 
 \paragraph{(c) Maximum $N_{\text{DP}}$ before communication bottleneck.}
+
+The backward pass remains compute-bound as long as the communication time is no
+larger than the local backward compute time:
+\[
+  T_{\text{DP,bwd,comm}}
+  \le
+  T_{\text{DP,bwd,compute}}.
+\]
+From part (a), each device performs
+\[
+  \frac{12 B D D_{\text{FF}}}{N_{\text{DP}}}
+\]
+FLOPs in the backward pass, so with accelerator throughput $C$ FLOP/s,
+\[
+  T_{\text{DP,bwd,compute}}
+  =
+  \frac{12 B D D_{\text{FF}}}{N_{\text{DP}} C}.
+\]
+From part (b),
+\[
+  T_{\text{DP,bwd,comm}}
+  =
+  \frac{12D D_{\text{FF}}}{W}
+  \frac{N_{\text{DP}}-1}{N_{\text{DP}}}.
+\]
+Requiring communication to be hidden by computation gives
+\begin{align*}
+  \frac{12D D_{\text{FF}}}{W}
+  \frac{N_{\text{DP}}-1}{N_{\text{DP}}}
+  &\le
+  \frac{12 B D D_{\text{FF}}}{N_{\text{DP}} C}.
+\end{align*}
+Cancel the common factor $12D D_{\text{FF}}/N_{\text{DP}}$:
+\[
+  \frac{N_{\text{DP}}-1}{W}
+  \le
+  \frac{B}{C}.
+\]
+Therefore
+\[
+  \boxed{
+    N_{\text{DP}}
+    \le
+    1 + \frac{BW}{C}
+  }.
+\]
+This bound does not depend on $D$ or $D_{\text{FF}}$ because both computation
+and gradient communication scale linearly with the FFN parameter size
+$D D_{\text{FF}}$; increasing the batch size $B$ is what increases compute
+relative to communication and allows scaling to more data-parallel devices.
 
 
 % ----------------------------------------------------------
