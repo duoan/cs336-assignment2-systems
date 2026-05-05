@@ -9,6 +9,7 @@ import warnings
 import einx
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.cuda.nvtx as nvtx
 from einops import einsum, rearrange
 from jaxtyping import Bool, Float, Int
@@ -186,7 +187,10 @@ class BasicsTransformerLM(nn.Module):
         num_layers: int,
         num_heads: int,
         d_ff: int,
+        *,
         rope_theta: float | None = 10_000.0,
+        num_experts: int = 0,
+        top_k: int = 2,
     ):
         # Store the model configuration for serialization / deserialization
         self.config = {
@@ -208,6 +212,8 @@ class BasicsTransformerLM(nn.Module):
                     num_heads=num_heads,
                     d_ff=d_ff,
                     positional_encoder=self.positional_encoder,
+                    num_experts=num_experts,
+                    top_k=top_k,
                 )
                 for _ in range(num_layers)
             ]
@@ -249,14 +255,18 @@ class BasicsTransformerLM(nn.Module):
         # x = self.positional_encoder(embedded_tokens, positions)
         x = embedded_tokens
 
+        aux_losses = []
         for layer in self.layers:
             # (batch size, sequence_length, d_model)
-            x = layer(x)
+            x, aux_loss = layer(x)
+            if layer.use_moe:
+                aux_losses.append(aux_loss)
+        
         # (batch size, sequence_length, d_model)
         x = self.ln_final(x)
         # (batch size, sequence_length, vocab_size)
         logits = self.lm_head(x)
-        return logits
+        return logits, aux_losses
 
     @torch.no_grad()
     def generate(
@@ -290,7 +300,7 @@ class BasicsTransformerLM(nn.Module):
             # beyond the model's context length
             x = x[:, -self.context_length :] if x.size(1) > self.context_length else x
             # Get the logits from the model
-            logits = self.forward(x)
+            logits, _ = self.forward(x)
             # Take the logits for the next token
             next_token_logits = logits[:, -1]
             # apply temperature scaling
@@ -357,6 +367,8 @@ class TransformerBlock(nn.Module):
         num_heads: int,
         d_ff: int,
         positional_encoder: RotaryEmbedding | None,
+        num_experts: int = 0,
+        top_k: int = 2,
         device=None,
     ):
         super().__init__()
@@ -365,7 +377,8 @@ class TransformerBlock(nn.Module):
             num_heads=num_heads,
             positional_encoder=positional_encoder,
         )
-        self.ffn = SwiGLU(d_model=d_model, d_ff=d_ff)
+        self.use_moe = num_experts > 0
+        self.ffn = MoE(d_model, d_ff, num_experts, top_k=top_k) if self.use_moe else SwiGLU(d_model=d_model, d_ff=d_ff)
         self.ln1 = RMSNorm(d_model)
         self.ln2 = RMSNorm(d_model)
 
@@ -385,10 +398,76 @@ class TransformerBlock(nn.Module):
         attn_sublayer_output = x + x_attn
 
         # Apply the feed-forward sublayer
-        x_ffn = self.ffn(self.ln2(attn_sublayer_output))
+        aux_loss = None
+        if self.use_moe:
+            x_ffn, aux_loss = self.ffn(self.ln2(attn_sublayer_output))
+        else:
+            x_ffn = self.ffn(self.ln2(attn_sublayer_output))
         ffn_sublayer_output = attn_sublayer_output + x_ffn
-        return ffn_sublayer_output
+        return ffn_sublayer_output, aux_loss
 
+
+class MoE(nn.Module):
+
+    def __init__(self, d_model: int, d_ff: int, num_experts: int, top_k: int = 2, capacity_factor=1.5, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        assert 1 <= top_k <= num_experts, f"Expected 1 <= top_k <= num_experts, got top_k={top_k}, num_experts={num_experts}"
+        self.d_model = d_model
+        self.num_experts = num_experts
+        self.top_k = top_k
+        self.capacity_factor = capacity_factor
+
+        # Gating network: produces logits over experts
+        self.gate = Linear(d_model, num_experts)
+
+        # Experts: each processes the full d_model vector
+        self.experts = nn.ModuleList(
+            [SwiGLU(d_model, d_ff) for _ in range(num_experts)]
+        )
+
+    def forward(self, x: Float[Tensor, "batch_size sequence_length d_model"]):
+        assert x.dim() == 3 and x.size(-1) == self.d_model, \
+            f"Expected [batch, sequence, {self.d_model}], got {tuple(x.shape)}"
+
+        B, S, _ = x.shape
+        num_tokens = B * S
+
+        # [B, S, E]
+        gate_logits = self.gate(x)
+        gate_probs = softmax(gate_logits, dim=-1)
+
+        # Top-k expert indices and normalized weights per token: [B, S, K]
+        topk_logits, topk_indices = torch.topk(gate_logits, k=self.top_k, dim=-1)
+        topk_weights = softmax(topk_logits, dim=-1)
+
+        # Output buffer
+        y = torch.zeros_like(x)
+
+        # Route through experts
+        for i, expert in enumerate(self.experts):
+            expert_slot_mask = topk_indices == i
+            token_mask = expert_slot_mask.any(dim=-1)
+            if not token_mask.any():
+                continue
+
+            expert_weight = topk_weights[expert_slot_mask].unsqueeze(-1)
+            y[token_mask] += expert(x[token_mask]) * expert_weight
+
+        # load balance
+        with torch.no_grad():
+            hard_counts = torch.bincount(topk_indices.reshape(-1), minlength=self.num_experts).float()
+            hard_fraction = hard_counts / (num_tokens * self.top_k)
+
+        # Probability fraction: average gate soft probability per expert.
+        prob_faction = gate_probs.mean(dim=(0, 1))
+
+        uniform = torch.full_like(prob_faction, 1.0 / self.num_experts)
+
+        aux_loss = (
+            F.mse_loss(prob_faction, uniform) + F.mse_loss(hard_fraction, uniform)
+        )
+
+        return y, aux_loss
 
 class SwiGLU(nn.Module):
     def __init__(self, d_model: int, d_ff: int):

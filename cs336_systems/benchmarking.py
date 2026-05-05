@@ -1,19 +1,30 @@
 import argparse
 import contextlib
+import time
 import timeit
 
 import torch
+from torchinfo import summary
+from torchview import draw_graph
 
 from cs336_basics.model import BasicsTransformerLM
 from cs336_basics.optimizer import AdamW
 from cs336_basics.nn_utils import cross_entropy
 
 MODEL_CONFIGS = {
+    # Dense
     "small":  dict(d_model=768,   d_ff=3072,   num_layers=12, num_heads=12),   # ~125M
     "medium": dict(d_model=1024,  d_ff=4096,   num_layers=24, num_heads=16),   # ~350M
     "large":  dict(d_model=1280,  d_ff=5120,   num_layers=36, num_heads=20),   # ~760M
     "xl":     dict(d_model=2560,  d_ff=10240,  num_layers=32, num_heads=32),
     "10B":    dict(d_model=4608,  d_ff=12288,  num_layers=50, num_heads=36),
+    
+    # MoE
+    "small-moe":  dict(d_model=768,   d_ff=3072,   num_layers=12, num_heads=12, num_experts=4, top_k=2),
+    "medium-moe": dict(d_model=1024,  d_ff=4096,   num_layers=24, num_heads=16, num_experts=4, top_k=2),
+    "large-moe":  dict(d_model=1280,  d_ff=5120,   num_layers=36, num_heads=20, num_experts=8, top_k=2),
+    "xl-moe":     dict(d_model=2560,  d_ff=10240,  num_layers=32, num_heads=32, num_experts=8, top_k=2),
+    "10B-moe":    dict(d_model=4608,  d_ff=12288,  num_layers=50, num_heads=36, num_experts=16, top_k=2),
 }
 
 def run_benchmark(
@@ -24,6 +35,9 @@ def run_benchmark(
     d_ff: int=3072,
     num_layers: int=12,
     num_heads: int=12,
+    num_experts: int=0,
+    top_k: int=2,
+    aux_loss_weight: float=0.01,
     warmup_steps: int=5,
     repetion_steps: int=10,
     dtype: torch.dtype=torch.float32,
@@ -48,7 +62,26 @@ def run_benchmark(
         num_heads: int
             Number of heads to use in multi-headed attention. `d_model` must be
             evenly divisible by `num_heads`.
+        num_experts: int
+            Number of experts to use in MoE
+        top_k: int
+            Number of experts each token routes to in MoE.
+        aux_loss_weight: float
+            Weight for the MoE auxiliary load-balancing loss.
     """
+    def unpack_model_output(model_output):
+        if isinstance(model_output, tuple):
+            return model_output
+        return model_output, []
+
+    def compute_loss(model_output, targets):
+        logits, aux_losses = unpack_model_output(model_output)
+        loss = cross_entropy(logits, targets)
+        if aux_losses:
+            aux_loss = torch.stack(aux_losses).mean()
+            loss = loss + aux_loss_weight * aux_loss
+        return loss
+
     torch.set_float32_matmul_precision('high')
     device = torch.accelerator.current_accelerator()
     
@@ -58,7 +91,24 @@ def run_benchmark(
     targets = data[:,1:] # shift 1
     
     
-    model = BasicsTransformerLM(vocab_size, context_length, d_model, num_layers, num_heads, d_ff).to(device)
+    model = BasicsTransformerLM(
+        vocab_size, context_length, d_model, num_layers, num_heads, d_ff, num_experts=num_experts, top_k=top_k
+    ).to(device)
+    
+    summary(model, input_data=inputs, depth=8, device=device)
+    
+    model_graph = draw_graph(
+        model, 
+        input_data=inputs, 
+        device=device, 
+        expand_nested=True, 
+        filename=f"figures/{time.time_ns()}", 
+        collect_attributes=True, 
+        roll=True,
+        hide_module_functions=False,
+    )
+    model_graph.visual_graph.render(format='svg')
+    
     if compile:
         model = torch.compile(model)
 
@@ -74,10 +124,9 @@ def run_benchmark(
         with autocast_ctx:
             if inference_only:
                 with torch.no_grad():
-                    logits = model(inputs)
+                    model(inputs)
             else:
-                logits = model(inputs)
-                losses = cross_entropy(logits, targets)
+                losses = compute_loss(model(inputs), targets)
         if not inference_only:
             losses.backward()
             optimizer.step()
@@ -131,10 +180,10 @@ def run_benchmark(
             nvtx_ctx = contextlib.nullcontext if compile else torch.cuda.nvtx.range
             with autocast_ctx:
                 with nvtx_ctx("forward_pass"):
-                    logits = model(inputs)
+                    model_output = model(inputs)
                 if not inference_only:
                     with nvtx_ctx("loss_calculation"):
-                        losses = cross_entropy(logits, targets)
+                        losses = compute_loss(model_output, targets)
             torch.cuda.synchronize()
             events[i]['fw'] = (timeit.default_timer() - start_fw_time) * 1000
 
@@ -193,6 +242,7 @@ if __name__ == "__main__":
     parser.add_argument("--inference-only", action="store_true", help="Run forward pass only (no backward/optimizer)")
     parser.add_argument("--memory-snapshot", type=str, default=None, help="Path to save memory snapshot pickle")
     parser.add_argument("--compile", action="store_true", help="Enable torch compile")
+    parser.add_argument("--aux-loss-weight", type=float, default=0.01, help="Weight for MoE auxiliary load-balancing loss")
     args = parser.parse_args()
 
     dtype_map = {"float32": torch.float32, "bfloat16": torch.bfloat16, "float16": torch.float16}
@@ -210,5 +260,6 @@ if __name__ == "__main__":
         memory_snapshot_path=args.memory_snapshot,
         compile=args.compile,
         dtype=dtype,
+        aux_loss_weight=args.aux_loss_weight,
         **config,
     )
