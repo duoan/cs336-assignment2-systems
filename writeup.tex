@@ -2328,13 +2328,172 @@ relative to communication and allows scaling to more data-parallel devices.
 
 \paragraph{(a) FLOPs for forward and backward pass with FSDP.}
 
+Under FSDP, the batch is sharded across the $N_{\text{FSDP}}$ devices, so each
+device computes on
+\[
+  x^{(i)} \in \mathbb{R}^{B/N_{\text{FSDP}} \times D}.
+\]
+The weights are stored sharded, but before each layer's computation they are
+all-gathered into the full matrices
+\[
+  W_1, W_2 \in \mathbb{R}^{D \times D_{\text{FF}}},
+  \qquad
+  W_3 \in \mathbb{R}^{D_{\text{FF}} \times D}.
+\]
+Thus the local forward pass uses the same matmuls as data parallelism, but on
+only $B/N_{\text{FSDP}}$ examples:
+
+\begin{align*}
+  x_1^{(i)} &= x^{(i)} W_1,
+  &
+  \text{FLOPs} &= \frac{2 B D D_{\text{FF}}}{N_{\text{FSDP}}},
+\\
+  x_2^{(i)} &= x^{(i)} W_2,
+  &
+  \text{FLOPs} &= \frac{2 B D D_{\text{FF}}}{N_{\text{FSDP}}},
+\\
+  y^{(i)} &= z^{(i)} W_3,
+  &
+  \text{FLOPs} &= \frac{2 B D D_{\text{FF}}}{N_{\text{FSDP}}}.
+\end{align*}
+
+Ignoring the elementwise activation and multiplication, the forward-pass compute
+per device is
+\[
+  \boxed{
+    \text{FLOPs}_{\text{FSDP,fwd,per device}}
+    =
+    \frac{6 B D D_{\text{FF}}}{N_{\text{FSDP}}}
+  }.
+\]
+The backward pass also uses the same six matmuls as data parallelism, again on
+only the local $B/N_{\text{FSDP}}$ examples. Therefore the backward-pass compute
+per device is
+\[
+  \boxed{
+    \text{FLOPs}_{\text{FSDP,bwd,per device}}
+    =
+    \frac{12 B D D_{\text{FF}}}{N_{\text{FSDP}}}
+  }.
+\]
+Equivalently, aggregate compute across all devices is $6BD D_{\text{FF}}$ FLOPs
+for the forward pass and $12BD D_{\text{FF}}$ FLOPs for the backward pass; FSDP
+changes memory and communication, not the total matmul work.
+
 
 
 \paragraph{(b) Communication time for forward and backward pass.}
 
+Each FFN weight matrix has $D D_{\text{FF}}$ elements, and the problem assumes
+FP16 values, so one full weight matrix has communication payload
+\[
+  S_{\text{one weight}}
+  =
+  2D D_{\text{FF}}
+  \quad\text{bytes}.
+\]
+A ring all-gather or ring reduce-scatter of a payload of size $S$ across $N$
+devices takes
+\[
+  \frac{N-1}{N}\frac{S}{W}
+\]
+seconds.
+
+In the forward pass, FSDP all-gathers $W_1$, $W_2$, and $W_3$, so the
+communication time is
+\[
+  \boxed{
+    T_{\text{FSDP,fwd,comm}}
+    =
+    3
+    \frac{N_{\text{FSDP}}-1}{N_{\text{FSDP}}}
+    \frac{2D D_{\text{FF}}}{W}
+    =
+    \frac{6D D_{\text{FF}}}{W}
+    \frac{N_{\text{FSDP}}-1}{N_{\text{FSDP}}}
+  }.
+\]
+In the backward pass, FSDP all-gathers the three weights again and then
+reduce-scatters the three weight gradients, for six total ring collectives of
+the same payload size. Therefore
+\[
+  \boxed{
+    T_{\text{FSDP,bwd,comm}}
+    =
+    6
+    \frac{N_{\text{FSDP}}-1}{N_{\text{FSDP}}}
+    \frac{2D D_{\text{FF}}}{W}
+    =
+    \frac{12D D_{\text{FF}}}{W}
+    \frac{N_{\text{FSDP}}-1}{N_{\text{FSDP}}}
+  }.
+\]
+As in data parallelism, these communication times are independent of $B$
+because FSDP communicates model weights and weight gradients rather than
+activations for each batch element.
+
 
 \paragraph{(c) Maximum $N_{\text{FSDP}}$ before communication bottleneck.}
 
+For the forward pass, communication can be hidden as long as
+\[
+  T_{\text{FSDP,fwd,comm}}
+  \le
+  T_{\text{FSDP,fwd,compute}}.
+\]
+From parts (a) and (b),
+\[
+  T_{\text{FSDP,fwd,compute}}
+  =
+  \frac{6 B D D_{\text{FF}}}{N_{\text{FSDP}} C},
+  \qquad
+  T_{\text{FSDP,fwd,comm}}
+  =
+  \frac{6D D_{\text{FF}}}{W}
+  \frac{N_{\text{FSDP}}-1}{N_{\text{FSDP}}}.
+\]
+Thus
+\begin{align*}
+  \frac{6D D_{\text{FF}}}{W}
+  \frac{N_{\text{FSDP}}-1}{N_{\text{FSDP}}}
+  &\le
+  \frac{6 B D D_{\text{FF}}}{N_{\text{FSDP}} C}.
+\end{align*}
+Canceling the common factor $6D D_{\text{FF}}/N_{\text{FSDP}}$ gives
+\[
+  \boxed{
+    N_{\text{FSDP}}
+    \le
+    1 + \frac{BW}{C}
+  }
+  \qquad\text{(forward pass)}.
+\]
+
+For the backward pass, the same comparison gives
+\[
+  T_{\text{FSDP,bwd,compute}}
+  =
+  \frac{12 B D D_{\text{FF}}}{N_{\text{FSDP}} C},
+  \qquad
+  T_{\text{FSDP,bwd,comm}}
+  =
+  \frac{12D D_{\text{FF}}}{W}
+  \frac{N_{\text{FSDP}}-1}{N_{\text{FSDP}}}.
+\]
+The factor of $12D D_{\text{FF}}/N_{\text{FSDP}}$ cancels in exactly the same
+way, so
+\[
+  \boxed{
+    N_{\text{FSDP}}
+    \le
+    1 + \frac{BW}{C}
+  }
+  \qquad\text{(backward pass)}.
+\]
+Both bounds match because in this simplified FFN analysis the FSDP
+communication and matmul compute scale by the same constants in the forward
+and backward passes; increasing $B$ increases local compute relative to
+communication, while $D$ and $D_{\text{FF}}$ cancel.
 
 % ----------------------------------------------------------
 \subsection{Tensor Parallel Calculations}
