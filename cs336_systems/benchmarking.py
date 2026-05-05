@@ -4,7 +4,6 @@ import time
 import timeit
 
 import torch
-from torchinfo import summary
 from torchview import draw_graph
 
 from cs336_basics.model import BasicsTransformerLM
@@ -95,8 +94,6 @@ def run_benchmark(
         vocab_size, context_length, d_model, num_layers, num_heads, d_ff, num_experts=num_experts, top_k=top_k
     ).to(device)
     
-    summary(model, input_data=inputs, depth=8, device=device)
-    
     model_graph = draw_graph(
         model, 
         input_data=inputs, 
@@ -114,6 +111,7 @@ def run_benchmark(
 
     num_params = sum(p.numel() for p in model.parameters())
     print(f"Model parameters: {num_params:,} ({num_params / 1e6:.1f}M / {num_params / 1e9:.2f}B)")
+    
     if inference_only:
         model.eval()
     optimizer = AdamW(model.parameters())
